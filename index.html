@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LEM Hours Check</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one column field tool. Drop zone + file slots on top, summary chips, then a per-person table with problems first. */
+:root {
+  --bg: #f3f4f1;
+  --surface: #ffffff;
+  --ink: #1d2327;
+  --muted: #5d676d;
+  --line: #d8dcd6;
+  --accent: #d98a00;          /* hi-vis amber */
+  --accent-soft: #fbefd6;
+  --ok: #2c7a4b;
+  --ok-soft: #e0f0e5;
+  --bad: #b8322a;
+  --bad-soft: #f8e1df;
+  --warn: #9a6400;
+  --warn-soft: #fbefd6;
+  --idle: #7b8489;
+  --idle-soft: #eceeea;
+  --display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --body: "Barlow", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15191b; --surface: #1d2326; --ink: #e6e9e5; --muted: #9aa4a8; --line: #333c40;
+    --accent: #f0a523; --accent-soft: #3a2d12;
+    --ok: #6cc893; --ok-soft: #1b3326; --bad: #f08a80; --bad-soft: #3d1f1c;
+    --warn: #f0b54a; --warn-soft: #3a2d12; --idle: #8a9498; --idle-soft: #252c2f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15191b; --surface: #1d2326; --ink: #e6e9e5; --muted: #9aa4a8; --line: #333c40;
+  --accent: #f0a523; --accent-soft: #3a2d12;
+  --ok: #6cc893; --ok-soft: #1b3326; --bad: #f08a80; --bad-soft: #3d1f1c;
+  --warn: #f0b54a; --warn-soft: #3a2d12; --idle: #8a9498; --idle-soft: #252c2f;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--body); font-size: 15px; line-height: 1.5;
+}
+.wrap { max-width: 1040px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 64px; display: grid; gap: 22px; }
+header { display: grid; gap: 4px; }
+.eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--display); font-weight: 700; font-size: clamp(30px, 6vw, 42px); line-height: 1.05; margin: 0; text-wrap: balance; }
+h1 .tick { color: var(--accent); }
+.lede { color: var(--muted); margin: 0; max-width: 62ch; }
+
+.drop {
+  border: 2px dashed var(--line); border-radius: 10px; background: var(--surface);
+  padding: 22px 18px; display: grid; gap: 14px; cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.drop:hover, .drop:focus-visible { border-color: var(--accent); outline: none; }
+.drop.over { border-color: var(--accent); background: var(--accent-soft); }
+.drop-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+.drop-title { font-family: var(--display); font-size: 22px; font-weight: 600; }
+.drop-hint { color: var(--muted); font-size: 13px; }
+.slots { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.slot { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: grid; gap: 2px; min-width: 0; background: var(--bg); }
+.slot-label { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+.slot-label .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+.slot.loaded .dot { background: var(--ok); }
+.slot-file { font-weight: 600; overflow-wrap: anywhere; }
+.slot-meta { font-size: 13px; color: var(--muted); }
+.slot.empty .slot-file { color: var(--muted); font-weight: 400; }
+
+.notice { border-radius: 8px; padding: 10px 14px; font-size: 14px; }
+.notice.warn { background: var(--warn-soft); color: var(--warn); }
+.notice.err { background: var(--bad-soft); color: var(--bad); }
+.notice.example { background: var(--accent-soft); color: var(--ink); border: 1px solid var(--accent); }
+
+.summary { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+.chip { border-radius: 8px; padding: 8px 14px; display: grid; min-width: 112px; background: var(--surface); border: 1px solid var(--line); }
+.chip b { font-family: var(--display); font-size: 28px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.chip span { font-size: 12px; color: var(--muted); }
+.chip.ok b { color: var(--ok); }
+.chip.bad b { color: var(--bad); }
+.chip.warn b { color: var(--warn); }
+.chip.totals b { font-size: 20px; padding-top: 6px; }
+.verdict { font-family: var(--display); font-size: 26px; font-weight: 700; margin: 0; }
+.verdict.ok { color: var(--ok); }
+.verdict.bad { color: var(--bad); }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: space-between; }
+.toolbar label { display: inline-flex; gap: 8px; align-items: center; font-size: 14px; color: var(--muted); }
+.toolbar input[type="number"] { width: 70px; font: inherit; font-family: var(--mono); padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); }
+.btn { font: inherit; font-weight: 600; font-size: 14px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+.btn:hover { border-color: var(--accent); }
+.btn:focus-visible, .toolbar input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { width: 100%; border-collapse: collapse; min-width: 720px; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+th { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; background: var(--bg); }
+td.num, th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+td .sub { display: block; font-size: 12px; color: var(--muted); font-family: var(--body); }
+td.num .sub { font-family: var(--mono); }
+.name { font-weight: 600; }
+.alias { display: block; font-size: 12px; color: var(--warn); }
+tr.st-bad td:first-child { box-shadow: inset 4px 0 0 var(--bad); }
+tr.st-warn td:first-child { box-shadow: inset 4px 0 0 var(--accent); }
+tr.st-ok td:first-child { box-shadow: inset 4px 0 0 var(--ok); }
+tr.st-idle td { color: var(--idle); }
+tr.st-idle .name { font-weight: 500; }
+.diff-bad { color: var(--bad); font-weight: 600; }
+.pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 99px; white-space: nowrap; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.idle { background: var(--idle-soft); color: var(--idle); }
+.section-row td { background: var(--bg); font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding-block: 6px; }
+.foot { font-size: 13px; color: var(--muted); max-width: 70ch; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Daily sign-in ↔ LEM</div>
+    <h1>LEM Hours Check<span class="tick">.</span></h1>
+    <p class="lede">Drop the Daily Workforce Report (sign-in sheet) and the LEM Report. Each person's sign-in hours (time out minus time in) are compared with their hours on the LEM.</p>
+  </header>
+
+  <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose or drop Excel files">
+    <div class="drop-head">
+      <div class="drop-title">Drop both Excel files here</div>
+      <div class="drop-hint">or click to choose · .xlsx / .xls · files never leave your browser</div>
+    </div>
+    <div class="slots">
+      <div class="slot empty" id="slot-signin">
+        <div class="slot-label"><span class="dot"></span>Daily sign-in</div>
+        <div class="slot-file">Not loaded</div>
+        <div class="slot-meta"></div>
+      </div>
+      <div class="slot empty" id="slot-lem">
+        <div class="slot-label"><span class="dot"></span>LEM report</div>
+        <div class="slot-file">Not loaded</div>
+        <div class="slot-meta"></div>
+      </div>
+    </div>
+    <input type="file" id="file" accept=".xlsx,.xlsm,.xls" multiple hidden>
+  </div>
+
+  <div id="notices" style="display:grid;gap:8px"></div>
+
+  <section id="results" style="display:grid;gap:16px">
+    <div style="display:grid;gap:10px">
+      <p class="verdict" id="verdict"></p>
+      <div class="summary" id="summary"></div>
+    </div>
+    <div class="toolbar">
+      <div class="btn-row">
+        <label for="only-problems"><input type="checkbox" id="only-problems"> Show only problems</label>
+        <label for="break">Deduct unpaid break from sign-in <input type="number" id="break" min="0" step="0.25" value="0"> hrs</label>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="copy" type="button">Copy problem list</button>
+        <button class="btn" id="clear" type="button">Clear files</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th class="num">Sign-in</th>
+            <th class="num">Sign-in hrs</th>
+            <th class="num">LEM hrs</th>
+            <th class="num">Diff</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <p class="foot">Names are matched as "Last, First". Small spelling differences (Zimerle / Zumerle) and short first names (Mike / Michael) still match and are flagged in amber so you can fix the spelling. Overnight shifts (time out earlier than time in) count through midnight. On the LEM, hours come from the "Hours" or "Total" column of every labour tab; a person on more than one tab is summed.</p>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script id="logic">
+// ---------- Parsing & matching (no DOM) ----------
+var Logic = (function () {
+  function txt(v) { return v == null ? "" : String(v).replace(/\s+/g, " ").trim(); }
+  function low(v) { return txt(v).toLowerCase(); }
+
+  function sheetRows(ws) {
+    return XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null, blankrows: true });
+  }
+
+  // Excel time (fraction of day, or full date serial) or text like "6:00", "0600", "6:30 PM" -> hours (0-24)
+  function toHours(v) {
+    if (v == null || v === "") return null;
+    if (v instanceof Date) return v.getHours() + v.getMinutes() / 60;
+    if (typeof v === "number") {
+      var f = v - Math.floor(v);
+      if (v >= 1 && f === 0 && v <= 24) return v;           // typed as plain hour number
+      return Math.round(f * 24 * 60) / 60;
+    }
+    var s = low(v).replace(/\./g, "");
+    var m = s.match(/^(\d{1,2})(?::?(\d{2}))?\s*(am|pm|a|p)?$/);
+    if (!m) return null;
+    var h = +m[1], min = m[2] ? +m[2] : 0, ap = m[3];
+    if (!m[2] && !ap && m[1].length > 2) return null;
+    if (ap && ap[0] === "p" && h < 12) h += 12;
+    if (ap && ap[0] === "a" && h === 12) h = 0;
+    if (h > 24 || min > 59) return null;
+    return h + min / 60;
+  }
+  function toNum(v) {
+    if (v == null || v === "") return 0;
+    if (typeof v === "number") return v;
+    var n = parseFloat(String(v).replace(/[^0-9.\-]/g, ""));
+    return isNaN(n) ? 0 : n;
+  }
+  function toDateStr(v) {
+    if (v == null || v === "") return null;
+    if (v instanceof Date) return v.toISOString().slice(0, 10);
+    if (typeof v === "number" && v > 20000) {
+      var d = XLSX.SSF.parse_date_code(v);
+      if (d) return d.y + "-" + String(d.m).padStart(2, "0") + "-" + String(d.d).padStart(2, "0");
+    }
+    var t = Date.parse(txt(v));
+    return isNaN(t) ? null : new Date(t).toISOString().slice(0, 10);
+  }
+  function findDate(rows) {
+    for (var r = 0; r < Math.min(rows.length, 20); r++) {
+      var row = rows[r] || [];
+      for (var c = 0; c < row.length; c++) {
+        if (/^date\s*:?$/.test(low(row[c]))) {
+          for (var k = c + 1; k < row.length; k++) {
+            var d = toDateStr(row[k]);
+            if (d) return d;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  // "Sutherland ,Rene" / "Rene Sutherland" -> {last, first}
+  function splitName(raw) {
+    var s = txt(raw).replace(/\(.*?\)/g, "");
+    var last, first;
+    if (s.indexOf(",") >= 0) {
+      var parts = s.split(",");
+      last = parts[0]; first = parts.slice(1).join(" ");
+    } else {
+      var w = s.split(" ");
+      last = w.length > 1 ? w.pop() : w[0]; first = w.length ? w.join(" ") : "";
+    }
+    function clean(x) { return low(x).replace(/[^a-z' \-]/g, "").replace(/\s+/g, " ").trim(); }
+    return { last: clean(last), first: clean(first) };
+  }
+
+  function findHeader(rows, test) {
+    for (var r = 0; r < Math.min(rows.length, 40); r++) {
+      var row = rows[r] || [];
+      var cells = row.map(low);
+      var res = test(cells);
+      if (res) { res.row = r; return res; }
+    }
+    return null;
+  }
+  function col(cells, re) {
+    for (var i = 0; i < cells.length; i++) if (re.test(cells[i])) return i;
+    return -1;
+  }
+  function isTotalRow(row) {
+    return (row || []).some(function (c) { return /^total\b/.test(low(c)); });
+  }
+
+  function parseSignIn(rows, sheetName) {
+    var h = findHeader(rows, function (c) {
+      var n = col(c, /name/), tin = col(c, /^time\s*in\b/), tout = col(c, /^time\s*out\b/);
+      return n >= 0 && tin >= 0 && tout >= 0 ? { n: n, tin: tin, tout: tout, role: col(c, /position|id\s*#|class|title/) } : null;
+    });
+    if (!h) return null;
+    var people = [];
+    for (var r = h.row + 1; r < rows.length; r++) {
+      var row = rows[r] || [];
+      var name = txt(row[h.n]);
+      if (!name) continue;
+      if (/signature|^total/i.test(name)) break;
+      var a = toHours(row[h.tin]), b = toHours(row[h.tout]);
+      var hrs = null, issue = null;
+      if (a != null && b != null) { hrs = b - a; if (hrs < 0) hrs += 24; }
+      else if (a != null || b != null) issue = a == null ? "No time in" : "No time out";
+      var role = h.role >= 0 ? txt(row[h.role]).replace(/^\d+\s*\/\s*/, "") : "";
+      people.push({ raw: name, nm: splitName(name), role: role, tin: a, tout: b, hours: hrs, issue: issue, sheet: sheetName });
+    }
+    return { people: people, date: findDate(rows) };
+  }
+
+  function parseLem(rows, sheetName) {
+    var h = findHeader(rows, function (c) {
+      var n = col(c, /^name$|^employee|^full name|^worker/);
+      if (n < 0) return null;
+      var tot = col(c, /^total/), hrs = col(c, /^hours?$|^hrs$|^total hours/);
+      var hc = tot >= 0 ? tot : hrs;
+      if (hc < 0) return null;
+      return { n: n, h: hc, st: col(c, /straight|^st\b|reg/), ot: col(c, /^o\.?\s?t\b|overtime/), dt: col(c, /double|^d\.?t\b/), role: col(c, /^class|position|trade/) };
+    });
+    if (!h) return null;
+    var people = [];
+    for (var r = h.row + 1; r < rows.length; r++) {
+      var row = rows[r] || [];
+      if (isTotalRow(row)) break;
+      var name = txt(row[h.n]);
+      if (!name) continue;
+      var p = { raw: name, nm: splitName(name), role: h.role >= 0 ? txt(row[h.role]) : "", hours: toNum(row[h.h]), sheets: [sheetName] };
+      if (h.st >= 0) p.st = toNum(row[h.st]);
+      if (h.ot >= 0) p.ot = toNum(row[h.ot]);
+      if (h.dt >= 0) p.dt = toNum(row[h.dt]);
+      // Total column empty but split columns filled
+      if (!p.hours && (p.st || p.ot || p.dt)) p.hours = (p.st || 0) + (p.ot || 0) + (p.dt || 0);
+      people.push(p);
+    }
+    return { people: people, date: findDate(rows) };
+  }
+
+  // Look at a workbook and decide which report it is
+  function readWorkbook(wb) {
+    var signin = null, lem = { people: [], date: null, sheets: [] };
+    wb.SheetNames.forEach(function (sn) {
+      var rows = sheetRows(wb.Sheets[sn]);
+      var s = parseSignIn(rows, sn);
+      if (s && s.people.length) {
+        if (!signin) signin = { people: [], date: s.date, sheets: [] };
+        signin.people = signin.people.concat(s.people); signin.sheets.push(sn);
+        signin.date = signin.date || s.date;
+        return;
+      }
+      var l = parseLem(rows, sn);
+      if (l && l.people.length) {
+        lem.people = lem.people.concat(l.people); lem.sheets.push(sn);
+        lem.date = lem.date || l.date;
+      }
+    });
+    if (signin) return { kind: "signin", data: signin };
+    if (lem.people.length) {
+      // same person on several tabs -> sum
+      var byKey = {}, merged = [];
+      lem.people.forEach(function (p) {
+        var k = p.nm.last + "|" + p.nm.first;
+        if (byKey[k]) {
+          var q = byKey[k];
+          q.hours += p.hours; q.sheets = q.sheets.concat(p.sheets);
+          ["st", "ot", "dt"].forEach(function (f) { if (p[f] != null) q[f] = (q[f] || 0) + p[f]; });
+        } else { byKey[k] = p; merged.push(p); }
+      });
+      lem.people = merged;
+      return { kind: "lem", data: lem };
+    }
+    return { kind: null };
+  }
+
+  function lev(a, b) {
+    if (a === b) return 0;
+    var m = a.length, n = b.length, d = [];
+    for (var i = 0; i <= m; i++) { d[i] = [i]; }
+    for (var j = 0; j <= n; j++) d[0][j] = j;
+    for (i = 1; i <= m; i++) for (j = 1; j <= n; j++)
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    return d[m][n];
+  }
+  var NICK = [["michael","mike","mick"],["robert","rob","bob","bobby"],["william","will","bill","billy","liam"],["james","jim","jimmy","jamie"],["richard","rick","rich","dick"],["thomas","tom","tommy"],["matthew","matt"],["christopher","chris"],["daniel","dan","danny"],["anthony","tony"],["joseph","joe","joey"],["benjamin","ben"],["jonathan","jon"],["john","jack","johnny"],["nicholas","nick"],["edward","ed","eddie","ted"],["andrew","andy","drew"],["steven","stephen","steve"],["timothy","tim"],["gregory","greg"],["jeffrey","jeff"],["kenneth","ken","kenny"],["ronald","ron","ronnie"],["donald","don"],["douglas","doug"],["alexander","alex"],["samuel","sam"],["patrick","pat"],["randall","randy"],["raymond","ray"],["gerald","gerry","jerry"],["lawrence","larry"],["frederick","fred"],["charles","charlie","chuck"],["david","dave"],["peter","pete"],["jennifer","jen","jenny"],["katherine","kathy","kate","katie","catherine"],["elizabeth","liz","beth"],["rebecca","becky"],["deborah","deb"],["kimberly","kim"]];
+  function sameFirst(a, b) {
+    if (!a || !b) return true;
+    var fa = a.split(" ")[0], fb = b.split(" ")[0];
+    if (fa === fb) return "exact";
+    if (fa.indexOf(fb) === 0 || fb.indexOf(fa) === 0) return "prefix";
+    for (var i = 0; i < NICK.length; i++) if (NICK[i].indexOf(fa) >= 0 && NICK[i].indexOf(fb) >= 0) return "nick";
+    if (lev(fa, fb) <= 1 && Math.min(fa.length, fb.length) > 3) return "typo";
+    return false;
+  }
+
+  // Pair people. Returns [{s, l, nameNote}]
+  function match(signPeople, lemPeople) {
+    var usedL = {}, pairs = [], pending = [];
+    signPeople.forEach(function (s) {
+      var idx = -1;
+      lemPeople.forEach(function (l, i) {
+        if (idx < 0 && !usedL[i] && l.nm.last === s.nm.last && l.nm.first === s.nm.first) idx = i;
+      });
+      if (idx >= 0) { usedL[idx] = 1; pairs.push({ s: s, l: lemPeople[idx] }); }
+      else pending.push(s);
+    });
+    // second pass: fuzzy
+    var cands = [];
+    pending.forEach(function (s, si) {
+      lemPeople.forEach(function (l, li) {
+        if (usedL[li]) return;
+        var dl = lev(s.nm.last, l.nm.last);
+        var fm = sameFirst(s.nm.first, l.nm.first);
+        var score = null;
+        if (dl === 0 && fm) score = 1;
+        else if (dl <= 2 && s.nm.last.length > 3 && (fm === "exact" || fm === "prefix" || fm === "nick")) score = 2 + dl;
+        if (score != null) cands.push({ si: si, li: li, score: score });
+      });
+    });
+    cands.sort(function (a, b) { return a.score - b.score; });
+    var usedS = {};
+    cands.forEach(function (c) {
+      if (usedS[c.si] || usedL[c.li]) return;
+      usedS[c.si] = 1; usedL[c.li] = 1;
+      pairs.push({ s: pending[c.si], l: lemPeople[c.li], nameNote: true });
+    });
+    pending.forEach(function (s, si) { if (!usedS[si]) pairs.push({ s: s, l: null }); });
+    lemPeople.forEach(function (l, li) { if (!usedL[li]) pairs.push({ s: null, l: l }); });
+    return pairs;
+  }
+
+  // status: bad | warn | ok | idle
+  function evaluate(pairs, breakHrs) {
+    var EPS = 0.01;
+    return pairs.map(function (p) {
+      var s = p.s, l = p.l;
+      var sh = s && s.hours != null ? Math.max(0, s.hours - (s.hours > 0 ? breakHrs : 0)) : null;
+      var lh = l ? l.hours : null;
+      var r = { pair: p, signHrs: sh, lemHrs: lh, diff: null, status: "ok", label: "Match" };
+      if (s && s.issue) { r.status = "bad"; r.label = s.issue + " on sign-in"; return r; }
+      if (s && l) {
+        var a = sh || 0, b = lh || 0;
+        r.diff = b - a;
+        if (Math.abs(r.diff) > EPS) { r.status = "bad"; r.label = r.diff > 0 ? "LEM higher" : "LEM lower"; }
+        else if (a === 0) { r.status = "idle"; r.label = "Not working"; }
+        else if (p.nameNote) { r.status = "warn"; r.label = "Match · check name"; }
+      } else if (s) {
+        if (sh) { r.status = "bad"; r.label = "Missing from LEM"; r.diff = -sh; }
+        else { r.status = "idle"; r.label = "Not on LEM"; }
+      } else {
+        if (lh) { r.status = "bad"; r.label = "Not on sign-in"; r.diff = lh; }
+        else { r.status = "idle"; r.label = "Not on sign-in"; }
+      }
+      return r;
+    });
+  }
+
+  return { readWorkbook: readWorkbook, match: match, evaluate: evaluate, toHours: toHours, splitName: splitName };
+})();
+if (typeof module !== "undefined") module.exports = Logic;
+</script>
+<script>
+// ---------- UI ----------
+(function () {
+  var state = { signin: null, lem: null, example: false };
+  var $ = function (id) { return document.getElementById(id); };
+  var drop = $("drop"), input = $("file");
+
+  try { var b = localStorage.getItem("lemcheck.break"); if (b != null) $("break").value = b; } catch (e) {}
+
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function fmt(h) { return h == null ? "—" : (Math.round(h * 100) / 100).toString(); }
+  function clock(h) {
+    if (h == null) return "—";
+    var t = Math.round(h * 60), hh = Math.floor(t / 60) % 24, mm = t % 60;
+    return String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
+  }
+  function niceName(p) {
+    var cap = function (x) { return x.replace(/\b[a-z]/g, function (c) { return c.toUpperCase(); }); };
+    return cap(p.nm.last) + (p.nm.first ? ", " + cap(p.nm.first) : "");
+  }
+
+  function notice(kind, html) {
+    var d = document.createElement("div");
+    d.className = "notice " + kind; d.innerHTML = html;
+    $("notices").appendChild(d);
+  }
+
+  function handleFiles(files) {
+    if (!files || !files.length) return;
+    if (state.example) { state.example = false; state.signin = null; state.lem = null; }
+    var pending = files.length;
+    Array.prototype.forEach.call(files, function (f) {
+      var fr = new FileReader();
+      fr.onload = function () {
+        try {
+          var wb = XLSX.read(new Uint8Array(fr.result), { type: "array" });
+          var res = Logic.readWorkbook(wb);
+          if (res.kind) { res.data.file = f.name; state[res.kind] = res.data; }
+          else state.errors = (state.errors || []).concat(f.name + " doesn't look like a sign-in sheet or a LEM. No name column with Time In / Time Out, or with Hours / Total, was found.");
+        } catch (e) {
+          state.errors = (state.errors || []).concat(f.name + " couldn't be opened as an Excel file.");
+        }
+        if (--pending === 0) render();
+      };
+      fr.readAsArrayBuffer(f);
+    });
+  }
+
+  drop.addEventListener("click", function () { input.click(); });
+  drop.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); } });
+  input.addEventListener("change", function () { handleFiles(input.files); input.value = ""; });
+  ["dragenter", "dragover"].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add("over"); }); });
+  ["dragleave", "drop"].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove("over"); }); });
+  drop.addEventListener("drop", function (e) { handleFiles(e.dataTransfer.files); });
+  // Dropping anywhere on the page also works
+  window.addEventListener("dragover", function (e) { e.preventDefault(); });
+  window.addEventListener("drop", function (e) { e.preventDefault(); if (!drop.contains(e.target)) handleFiles(e.dataTransfer.files); });
+
+  $("only-problems").addEventListener("change", render);
+  $("break").addEventListener("input", function () {
+    try { localStorage.setItem("lemcheck.break", $("break").value); } catch (e) {}
+    render();
+  });
+  $("clear").addEventListener("click", function () { state = { signin: null, lem: null, example: false }; render(); });
+
+  var lastProblems = [];
+  $("copy").addEventListener("click", function () {
+    var btn = this;
+    var text = lastProblems.length ? lastProblems.join("\n") : "All hours match.";
+    var done = function () { btn.textContent = "Copied"; setTimeout(function () { btn.textContent = "Copy problem list"; }, 1500); };
+    try {
+      navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); done(); });
+    } catch (e) { fallbackCopy(text); done(); }
+  });
+  function fallbackCopy(text) {
+    var ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); } catch (e) {}
+    ta.remove();
+  }
+
+  function slot(id, data, kindLabel) {
+    var el = $(id);
+    el.classList.toggle("loaded", !!data); el.classList.toggle("empty", !data);
+    el.querySelector(".slot-file").textContent = data ? data.file : "Not loaded";
+    var meta = "";
+    if (data) {
+      var counted = data.people.length;
+      meta = counted + " names" + (data.date ? " · " + data.date : "") + (data.sheets && data.sheets.length > 1 ? " · tabs: " + data.sheets.join(", ") : "");
+    }
+    el.querySelector(".slot-meta").textContent = meta;
+  }
+
+  function render() {
+    $("notices").innerHTML = "";
+    slot("slot-signin", state.signin); slot("slot-lem", state.lem);
+    (state.errors || []).forEach(function (m) { notice("err", esc(m)); });
+    state.errors = [];
+    if (state.example) notice("example", "<b>Example data.</b> These names are made up to show how the check works. Drop your sign-in sheet and LEM above to check your real hours.");
+
+    var results = $("results");
+    if (!state.signin || !state.lem) {
+      results.hidden = true;
+      if (state.signin || state.lem) notice("warn", "Now add the " + (state.signin ? "LEM report" : "daily sign-in sheet") + ".");
+      return;
+    }
+    results.hidden = false;
+    if (state.signin.date && state.lem.date && state.signin.date !== state.lem.date)
+      notice("warn", "Dates don't match: sign-in is <b>" + esc(state.signin.date) + "</b>, LEM is <b>" + esc(state.lem.date) + "</b>.");
+
+    var brk = parseFloat($("break").value) || 0;
+    var res = Logic.evaluate(Logic.match(state.signin.people, state.lem.people), brk);
+    var order = { bad: 0, warn: 1, ok: 2, idle: 3 };
+    res.sort(function (a, b) { return order[a.status] - order[b.status]; });
+
+    var c = { ok: 0, bad: 0, warn: 0, idle: 0 }, tS = 0, tL = 0;
+    res.forEach(function (r) { c[r.status]++; tS += r.signHrs || 0; tL += r.lemHrs || 0; });
+    var problems = c.bad;
+    $("verdict").className = "verdict " + (problems ? "bad" : "ok");
+    $("verdict").textContent = problems ? problems + (problems === 1 ? " person doesn't" : " people don't") + " line up" : "All hours line up";
+    $("summary").innerHTML =
+      '<div class="chip ok"><b>' + (c.ok + c.warn) + '</b><span>matching</span></div>' +
+      '<div class="chip bad"><b>' + c.bad + '</b><span>problems</span></div>' +
+      '<div class="chip warn"><b>' + c.warn + '</b><span>name spelled differently</span></div>' +
+      '<div class="chip"><b>' + c.idle + '</b><span>not working today</span></div>' +
+      '<div class="chip totals"><b>' + fmt(tS) + ' / ' + fmt(tL) + '</b><span>total hrs sign-in / LEM</span></div>';
+
+    var only = $("only-problems").checked;
+    var html = "", lastGroup = null;
+    lastProblems = [];
+    res.forEach(function (r) {
+      var s = r.pair.s, l = r.pair.l, p = s || l;
+      var label = niceName(p);
+      if (r.status === "bad" || r.status === "warn") {
+        var line = label + ": " + r.label;
+        if (r.status === "bad" && (s || l)) line += " (sign-in " + fmt(r.signHrs) + " h, LEM " + fmt(r.lemHrs) + " h)";
+        if (r.pair.nameNote) line += " [LEM spells it \"" + l.raw + "\"]";
+        lastProblems.push(line);
+      }
+      if (only && (r.status === "ok" || r.status === "idle")) return;
+      var group = r.status === "idle" ? "idle" : "active";
+      if (group !== lastGroup && group === "idle") html += '<tr class="section-row"><td colspan="6">No hours on either sheet</td></tr>';
+      lastGroup = group;
+
+      var role = (s && s.role) || (l && l.role) || "";
+      var nameCell = '<span class="name">' + esc(s ? s.raw : l.raw) + "</span>";
+      if (r.pair.nameNote) nameCell += '<span class="alias">LEM: ' + esc(l.raw) + "</span>";
+      if (role) nameCell += '<span class="sub">' + esc(role) + "</span>";
+
+      var inout = s && (s.tin != null || s.tout != null) ? clock(s.tin) + "–" + clock(s.tout) : (s ? "blank" : "not listed");
+      var lemCell = l ? fmt(r.lemHrs) : "—";
+      if (l && (l.ot || l.dt)) lemCell += '<span class="sub">' + fmt(l.st || 0) + " ST · " + fmt(l.ot || 0) + " OT · " + fmt(l.dt || 0) + " DT</span>";
+      else if (!l) lemCell += '<span class="sub">not listed</span>';
+      var diff = r.diff == null || Math.abs(r.diff) < 0.01 ? "—" : (r.diff > 0 ? "+" : "") + fmt(r.diff);
+      var pill = { ok: "ok", bad: "bad", warn: "warn", idle: "idle" }[r.status];
+      html += '<tr class="st-' + r.status + '">' +
+        "<td>" + nameCell + "</td>" +
+        '<td class="num">' + inout + "</td>" +
+        '<td class="num">' + (s ? fmt(r.signHrs) : "—") + "</td>" +
+        '<td class="num">' + lemCell + "</td>" +
+        '<td class="num' + (r.status === "bad" ? " diff-bad" : "") + '">' + diff + "</td>" +
+        '<td><span class="pill ' + pill + '">' + esc(r.label) + "</span></td></tr>";
+    });
+    if (!html) html = '<tr><td colspan="6">No problems. Untick "Show only problems" to see everyone.</td></tr>';
+    $("rows").innerHTML = html;
+  }
+
+  // Opening state: a made-up example so the page shows what it does
+  function P(raw, extra) { var o = { raw: raw, nm: Logic.splitName(raw) }; for (var k in extra) o[k] = extra[k]; return o; }
+  state.example = true;
+  state.signin = { file: "Example sign-in.xlsx", date: "2026-10-06", people: [
+    P("Hale, Marcus", { role: "Superintendent", tin: 5.5, tout: 17.5, hours: 12 }),
+    P("Okafor, Grace", { role: "Project Coordinator", tin: 6, tout: 14, hours: 8 }),
+    P("Brandt, Lukas", { role: "H&S Manager", tin: 8, tout: 14, hours: 6 }),
+    P("Pellerin, Andre", { role: "Foreman", tin: 6, tout: 18, hours: 12 }),
+    P("Whitford, Samuel", { role: "Labourer", tin: 6, tout: 18, hours: 12 }),
+    P("Nakamura, Ken", { role: "Operator", tin: 6, tout: null, hours: null, issue: "No time out" }),
+    P("Ruiz, Daniela", { role: "Labourer", tin: null, tout: null, hours: null })
+  ]};
+  state.lem = { file: "Example LEM.xlsx", date: "2026-10-06", people: [
+    P("Hale, Marcus", { role: "Superintendent", hours: 12 }),
+    P("Okafor, Grace", { role: "Project Coordinator", hours: 8 }),
+    P("Brandt, Lukas", { role: "HSE Manager", hours: 8 }),
+    P("Pellerin, Andre", { role: "Foreman", hours: 12, st: 8, ot: 3, dt: 1 }),
+    P("Whitferd, Sam", { role: "Labourer", hours: 12, st: 8, ot: 3, dt: 1 }),
+    P("Nakamura, Ken", { role: "Operator", hours: 10, st: 8, ot: 2, dt: 0 }),
+    P("Ruiz, Daniela", { role: "Labourer", hours: 0 }),
+    P("Fontaine, Theo", { role: "Labourer", hours: 4, st: 4, ot: 0, dt: 0 })
+  ]};
+  render();
+})();
+</script>
+</body>
+</html>
