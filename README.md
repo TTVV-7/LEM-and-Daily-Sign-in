@@ -1,9 +1,17 @@
 # LEM Hours Check
 
-A single-page tool that compares the Daily Workforce Report (sign-in sheet) against the daily LEM Report and shows, per person, whether the hours line up.
+A single-page tool for the daily Workforce Report (sign-in sheet) and LEM Report.
 
-Open `index.html` in a browser (or host it on GitHub Pages) and drop both `.xlsx` files on it. Everything runs in the browser; files are never uploaded.
+## Fill in the day
+- Enter the crew once: name, ID, position, LEM tab (staff or trades), shift, time in/out, activity, CWP and cost code, plus equipment.
+- **Start from a saved day** copies a previous day (people, times, equipment) so you only change what's different.
+- **Drop yesterday's sign-in and LEM** to fill the form from those files. The files are kept as templates, so downloads keep your own layout, logos and formulas. Workers' signatures on the sign-in are removed.
+- Download the sign-in and LEM. Both come from the same entries, so the hours always match.
+- Trades hours are split into straight time, overtime and double time with the rules under "Hours rules" (default: 8 ST, OT to 11, DT after).
 
-- Sign-in hours = Time Out − Time In (overnight shifts wrap past midnight), minus an optional unpaid break.
-- LEM hours = the "Hours" / "Total" column on every labour tab, summed per person.
-- Names are matched as "Last, First", tolerating small spelling differences and short first names; those are flagged so the spelling can be fixed.
+Days are saved in the claude.ai artifact's database. Opened as a plain file or on another host, they're saved in the browser.
+
+## Check two files
+Drop a finished sign-in and LEM to compare every person's hours. Problems are shown row by row on copies of the sheets, with cell references.
+
+Everything runs in the browser using SheetJS and ExcelJS from cdnjs.

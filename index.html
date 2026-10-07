@@ -157,6 +157,71 @@ tr.st-idle .name { font-weight: 500; }
 .where a { color: inherit; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); align-items: center; }
 .legend i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.tabs button { font: inherit; font-family: var(--display); font-size: 19px; font-weight: 600; background: none; border: 0; border-bottom: 3px solid transparent; color: var(--muted); padding: 6px 12px 8px; cursor: pointer; margin-bottom: -1px; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.fill { display: grid; gap: 16px; }
+.daybar { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; }
+.field { display: grid; gap: 4px; font-size: 12px; color: var(--muted); font-family: var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+.field input, .field select { font: inherit; font-family: var(--body); font-size: 15px; letter-spacing: 0; text-transform: none; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; }
+.save-state { font-size: 13px; color: var(--muted); padding-bottom: 8px; }
+.save-state.err { color: var(--bad); }
+.start { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 12px; }
+.start-copy { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 8px; min-width: 0; }
+.start-title { font-family: var(--display); font-size: 19px; font-weight: 600; }
+.start-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.start-row select { font: inherit; font-size: 14px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); max-width: 100%; }
+.hint { font-size: 13px; color: var(--muted); }
+.drop.small { padding: 14px 16px; gap: 6px; align-content: center; }
+.btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.btn.primary:hover { background: var(--accent); border-color: var(--accent); color: #1d2327; }
+.btn.danger { color: var(--bad); }
+.btn:disabled { opacity: .5; cursor: default; }
+.panel-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; margin-top: 6px; }
+.panel-head h2 { font-family: var(--display); font-size: 24px; margin: 0; }
+.panel-head h2 small { font-family: var(--mono); font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 8px; }
+.bulk { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 14px; color: var(--muted); background: var(--accent-soft); border-radius: 8px; padding: 8px 12px; }
+.bulk input[type="time"] { font: inherit; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); }
+.form-table { min-width: 1500px; font-size: 14px; }
+#equip-table { min-width: 1000px; }
+.form-table th { white-space: nowrap; }
+.form-table td { padding: 4px 6px; vertical-align: middle; }
+.form-table input, .form-table select { font: inherit; font-size: 14px; width: 100%; min-width: 0; border: 1px solid transparent; border-radius: 4px; background: transparent; color: var(--ink); padding: 4px 6px; }
+.form-table input:hover, .form-table select:hover { border-color: var(--line); }
+.form-table input:focus, .form-table select:focus { border-color: var(--accent); outline: none; background: var(--surface); }
+.form-table input[type="checkbox"] { width: auto; }
+.form-table input[type="time"] { width: 9.6em; font-family: var(--mono); font-size: 13px; }
+.form-table input[type="number"] { text-align: right; font-family: var(--mono); width: 5.5em; }
+.form-table .w-name { width: 15em; } .form-table .w-id { width: 6.5em; } .form-table .w-pos { width: 13em; } .form-table .w-cls { width: 12em; }
+.form-table .w-act { width: 13em; } .form-table .w-cwp { width: 10em; } .form-table .w-cost { width: 8em; } .form-table .w-desc { width: 14em; }
+.form-table select { width: auto; }
+.form-table td.calc { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; color: var(--ink); }
+.form-table td.calc.off { color: var(--idle); }
+.form-table th.sticky, .form-table td.sticky { position: sticky; left: 0; background: var(--surface); z-index: 1; box-shadow: 1px 0 0 var(--line); }
+.form-table th.sticky { background: var(--bg); }
+.form-table th.tick, .form-table td.tick { width: 28px; text-align: center; }
+.form-table tr.off input, .form-table tr.off select { color: var(--muted); }
+.form-table tr.bad td { background: var(--bad-soft); }
+.row-tools { white-space: nowrap; display: flex; gap: 2px; }
+.icon { font: inherit; font-size: 13px; border: 1px solid transparent; background: none; color: var(--muted); border-radius: 4px; padding: 2px 6px; cursor: pointer; }
+.icon:hover { border-color: var(--line); color: var(--ink); }
+.icon:focus-visible { outline: 2px solid var(--accent); }
+.empty-row td { padding: 18px 14px; color: var(--muted); }
+.rules summary { cursor: pointer; font-weight: 600; font-size: 14px; color: var(--muted); }
+.rules-body { display: flex; flex-wrap: wrap; gap: 10px 22px; padding-top: 10px; font-size: 14px; color: var(--muted); }
+.rules-body input { width: 64px; font: inherit; font-family: var(--mono); padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); }
+.genbar { position: sticky; bottom: env(safe-area-inset-bottom, 0px); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 16px; box-shadow: 0 -6px 18px color-mix(in srgb, var(--bg) 70%, transparent); z-index: 3; }
+.gen-sum { font-family: var(--display); font-size: 20px; font-weight: 600; grid-column: 1; }
+.genbar > .btn-row { grid-column: 2; grid-row: 1 / span 2; }
+.gen-layout { grid-column: 1; }
+.gen-msg { grid-column: 1 / -1; }
+.gen-msg:empty { display: none; }
+@media (max-width: 700px) { .gen-layout { display: none; } .genbar { grid-template-columns: minmax(0, 1fr); } .genbar > .btn-row { grid-column: 1; grid-row: auto; } }
+.gen-sum span { font-family: var(--body); font-size: 14px; font-weight: 400; color: var(--muted); }
+.gen-layout { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.gen-msg { font-size: 14px; }
+.gen-msg.ok { color: var(--ok); } .gen-msg.err { color: var(--bad); }
 .foot { font-size: 13px; color: var(--muted); max-width: 70ch; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -166,8 +231,99 @@ tr.st-idle .name { font-weight: 500; }
   <header>
     <div class="eyebrow">Daily sign-in ↔ LEM</div>
     <h1>LEM Hours Check<span class="tick">.</span></h1>
-    <p class="lede">Drop the Daily Workforce Report (sign-in sheet) and the LEM Report. Each person's sign-in hours (time out minus time in) are compared with their hours on the LEM.</p>
+    <p class="lede">Fill in the day once and get a matching Daily Workforce Report and LEM. Or drop two finished files to check that every person's hours line up.</p>
   </header>
+
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" id="tabbtn-fill" aria-selected="true">Fill in the day</button>
+    <button type="button" role="tab" id="tabbtn-check" aria-selected="false">Check two files</button>
+  </div>
+
+  <section id="tab-fill" class="fill">
+    <div class="daybar">
+      <label class="field" for="f-date"><span>Date</span><input type="date" id="f-date"></label>
+      <label class="field" for="f-shift"><span>Shift</span>
+        <select id="f-shift"><option value="D">Day (D)</option><option value="N">Night (N)</option></select></label>
+      <div class="save-state" id="save-state" aria-live="polite"></div>
+    </div>
+
+    <div class="start" id="start">
+      <div class="start-copy">
+        <div class="start-title" id="copy-title">Start from a saved day</div>
+        <div class="start-row">
+          <select id="copy-from" aria-label="Saved day to copy"></select>
+          <button class="btn primary" id="copy-btn" type="button">Copy into this day</button>
+          <button class="btn" id="undo-btn" type="button" hidden>Undo copy</button>
+        </div>
+        <div class="hint" id="copy-hint">Copies everyone, their times and the equipment. Then change what's different today.</div>
+      </div>
+      <div class="drop small" id="fill-drop" tabindex="0" role="button" aria-label="Choose or drop yesterday's Excel files">
+        <div class="start-title">Or drop yesterday's sign-in and LEM</div>
+        <div class="hint">Fills the form from the files and keeps their layout for the files you download.</div>
+        <input type="file" id="fill-file" accept=".xlsx,.xlsm" multiple hidden>
+      </div>
+    </div>
+    <div id="fill-notices" style="display:grid;gap:8px"></div>
+
+    <div class="panel-head">
+      <h2>Crew <small id="crew-count"></small></h2>
+      <div class="btn-row">
+        <button class="btn" id="add-person" type="button">Add person</button>
+        <button class="btn" id="clear-times" type="button">Clear all times</button>
+      </div>
+    </div>
+    <div class="bulk" id="bulk">
+      <span id="bulk-count">0 ticked</span>
+      <label for="bulk-in">In <input type="time" id="bulk-in" value="06:00"></label>
+      <label for="bulk-out">Out <input type="time" id="bulk-out" value="18:00"></label>
+      <button class="btn" id="bulk-apply" type="button">Set times</button>
+      <button class="btn" id="bulk-clear" type="button">Clear times</button>
+      <button class="btn danger" id="bulk-remove" type="button">Remove</button>
+    </div>
+    <div class="table-wrap form-wrap">
+      <table class="form-table" id="crew-table">
+        <thead><tr>
+          <th class="tick"><input type="checkbox" id="tick-all" aria-label="Tick everyone"></th>
+          <th class="sticky">Name (Last, First)</th><th>ID #</th><th>Position</th><th>LEM tab</th><th>LEM class</th><th>Shift</th>
+          <th>In</th><th>Out</th><th class="num">Hrs</th><th class="num">ST · OT · DT</th><th>Activity ID</th><th>CWP description</th><th>Cost code</th><th></th>
+        </tr></thead>
+        <tbody id="crew-rows"></tbody>
+      </table>
+    </div>
+
+    <div class="panel-head">
+      <h2>Equipment <small id="equip-count"></small></h2>
+      <button class="btn" id="add-equip" type="button">Add equipment</button>
+    </div>
+    <div class="table-wrap form-wrap">
+      <table class="form-table" id="equip-table">
+        <thead><tr><th class="sticky">Description</th><th>Asset code</th><th>Shift</th><th class="num">Standard hrs</th><th class="num">Standby hrs</th><th class="num">Total</th><th>CWP description</th><th>Cost code</th><th></th></tr></thead>
+        <tbody id="equip-rows"></tbody>
+      </table>
+    </div>
+
+    <details class="rules" id="rules">
+      <summary>Hours rules</summary>
+      <div class="rules-body">
+        <label for="r-st">Straight time up to <input type="number" id="r-st" min="0" step="0.5" value="8"> hrs</label>
+        <label for="r-ot">Overtime up to <input type="number" id="r-ot" min="0" step="0.5" value="11"> hrs, double time after</label>
+        <label for="r-break">Unpaid break taken off LEM hours <input type="number" id="r-break" min="0" step="0.25" value="0"> hrs</label>
+      </div>
+    </details>
+
+    <div class="genbar">
+      <div class="gen-sum" id="gen-sum"></div>
+      <div class="gen-layout" id="gen-layout"></div>
+      <div class="btn-row">
+        <button class="btn" id="dl-signin" type="button">Download sign-in</button>
+        <button class="btn" id="dl-lem" type="button">Download LEM</button>
+        <button class="btn primary" id="dl-both" type="button">Download both</button>
+      </div>
+      <div class="gen-msg" id="gen-msg" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section id="tab-check" style="display:grid;gap:22px" hidden>
 
   <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose or drop Excel files">
     <div class="drop-head">
@@ -238,9 +394,11 @@ tr.st-idle .name { font-weight: 500; }
     </div>
     <p class="foot">Names are matched as "Last, First". Small spelling differences (Zimerle / Zumerle) and short first names (Mike / Michael) still match and are flagged in amber so you can fix the spelling. Overnight shifts (time out earlier than time in) count through midnight. On the LEM, hours come from the "Hours" or "Total" column of every labour tab; a person on more than one tab is summed.</p>
   </section>
+  </section>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script id="logic">
 // ---------- Parsing & matching (no DOM) ----------
 var Logic = (function () {
@@ -356,7 +514,7 @@ var Logic = (function () {
   function parseSignIn(rows, sheetName, origin) {
     var h = findHeader(rows, function (c) {
       var n = col(c, /name/), tin = col(c, /^time\s*in\b/), tout = col(c, /^time\s*out\b/);
-      return n >= 0 && tin >= 0 && tout >= 0 ? { n: n, tin: tin, tout: tout, role: col(c, /position|id\s*#|class|title/) } : null;
+      return n >= 0 && tin >= 0 && tout >= 0 ? { n: n, tin: tin, tout: tout, role: col(c, /position|id\s*#|class|title/), act: col(c, /activity|cwp|task/) } : null;
     });
     if (!h) return null;
     var people = [], lastRow = h.row;
@@ -371,7 +529,7 @@ var Logic = (function () {
       if (a != null && b != null) { hrs = b - a; if (hrs < 0) hrs += 24; }
       else if (a != null || b != null) issue = a == null ? "No time in" : "No time out";
       var role = h.role >= 0 ? txt(row[h.role]).replace(/^\d+\s*\/\s*/, "") : "";
-      people.push({ raw: name, nm: splitName(name), role: role, tin: a, tout: b, hours: hrs, issue: issue,
+      people.push({ raw: name, nm: splitName(name), role: role, roleRaw: h.role >= 0 ? txt(row[h.role]) : "", activity: h.act >= 0 ? txt(row[h.act]) : "", tin: a, tout: b, hours: hrs, issue: issue,
         locs: [{ sheet: sheetName, r: r, xr: r + origin.r + 1, nameCol: h.n, hoursCols: [h.tin, h.tout] }] });
     }
     var grid = makeGrid(rows, origin, sheetName, h, lastRow, [h.n, h.tin, h.tout], [h.tin, h.tout]);
@@ -385,7 +543,8 @@ var Logic = (function () {
       var tot = col(c, /^total/), hrs = col(c, /^hours?$|^hrs$|^total hours/);
       var hc = tot >= 0 ? tot : hrs;
       if (hc < 0) return null;
-      return { n: n, h: hc, st: col(c, /straight|^st\b|reg/), ot: col(c, /^o\.?\s?t\b|overtime/), dt: col(c, /double|^d\.?t\b/), role: col(c, /^class|position|trade/) };
+      return { n: n, h: hc, st: col(c, /straight|^st\b|reg/), ot: col(c, /^o\.?\s?t\b|overtime/), dt: col(c, /double|^d\.?t\b/), role: col(c, /^class|position|trade/),
+        cwp: col(c, /cwp|description/), cost: col(c, /cost\s*code|^task/), shift: col(c, /^shift/), sub: col(c, /sub\s*id|^subcontract/) };
     });
     if (!h) return null;
     var people = [], lastRow = h.row;
@@ -396,6 +555,9 @@ var Logic = (function () {
       if (!name) continue;
       lastRow = r;
       var p = { raw: name, nm: splitName(name), role: h.role >= 0 ? txt(row[h.role]) : "", hours: toNum(row[h.h]),
+        kind: h.st >= 0 ? "trades" : "staff", order: people.length,
+        cwp: h.cwp >= 0 ? txt(row[h.cwp]) : "", cost: h.cost >= 0 ? txt(row[h.cost]) : "",
+        shift: h.shift >= 0 ? txt(row[h.shift]) : "", sub: h.sub >= 0 ? txt(row[h.sub]) : "",
         locs: [{ sheet: sheetName, r: r, xr: r + origin.r + 1, nameCol: h.n, hoursCols: [h.h] }] };
       if (h.st >= 0) p.st = toNum(row[h.st]);
       if (h.ot >= 0) p.ot = toNum(row[h.ot]);
@@ -408,9 +570,27 @@ var Logic = (function () {
     return { people: people, date: findDate(rows), grid: grid };
   }
 
+  function parseEquipment(rows) {
+    var h = findHeader(rows, function (c) {
+      var d = col(c, /^description|^equipment|^unit/), a = col(c, /asset|unit\s*#|unit\s*no/);
+      return d >= 0 && a >= 0 ? { d: d, a: a, shift: col(c, /^shift/), std: col(c, /^standard|^std|^operating/), sb: col(c, /standby/), cwp: col(c, /cwp/), cost: col(c, /cost\s*code|^task/) } : null;
+    });
+    if (!h) return null;
+    var out = [];
+    for (var r = h.row + 1; r < rows.length; r++) {
+      var row = rows[r] || [];
+      if (isTotalRow(row)) break;
+      var d = txt(row[h.d]);
+      if (!d) continue;
+      out.push({ desc: d, asset: txt(row[h.a]), shift: h.shift >= 0 ? txt(row[h.shift]) : "", std: h.std >= 0 ? toNum(row[h.std]) : 0,
+        standby: h.sb >= 0 ? toNum(row[h.sb]) : 0, cwp: h.cwp >= 0 ? txt(row[h.cwp]) : "", cost: h.cost >= 0 ? txt(row[h.cost]) : "" });
+    }
+    return out;
+  }
+
   // Look at a workbook and decide which report it is
   function readWorkbook(wb) {
-    var signin = null, lem = { people: [], date: null, sheets: [], grids: [] };
+    var signin = null, lem = { people: [], date: null, sheets: [], grids: [], equipment: [] };
     wb.SheetNames.forEach(function (sn) {
       var ws = wb.Sheets[sn];
       if (!ws["!ref"]) return;
@@ -427,7 +607,10 @@ var Logic = (function () {
       if (l && l.people.length) {
         lem.people = lem.people.concat(l.people); lem.sheets.push(sn); lem.grids.push(l.grid);
         lem.date = lem.date || l.date;
+        return;
       }
+      var eq = parseEquipment(rows);
+      if (eq) lem.equipment = lem.equipment.concat(eq);
     });
     if (signin) return { kind: "signin", data: signin };
     if (lem.people.length) {
@@ -529,9 +712,414 @@ var Logic = (function () {
     });
   }
 
-  return { readWorkbook: readWorkbook, match: match, evaluate: evaluate, toHours: toHours, splitName: splitName, toDateStr: toDateStr };
+  return { readWorkbook: readWorkbook, match: match, evaluate: evaluate, toHours: toHours, splitName: splitName, toDateStr: toDateStr, lev: lev };
 })();
 if (typeof module !== "undefined") module.exports = Logic;
+</script>
+<script id="builder">
+// ---------- Excel generation (ExcelJS; no DOM) ----------
+var Builder = (function () {
+  function low(v) { return String(v == null ? "" : v).replace(/\s+/g, " ").trim().toLowerCase(); }
+  function cellText(cell) {
+    var v = cell.value;
+    if (v == null) return "";
+    if (v instanceof Date) return "";
+    if (typeof v === "object") {
+      if (v.richText) return v.richText.map(function (t) { return t.text; }).join("");
+      if ("result" in v) return v.result == null ? "" : String(v.result);
+      if (v.text) return String(v.text);
+      return "";
+    }
+    return String(v);
+  }
+  function isFormula(cell) { return !!(cell.formula || cell.sharedFormula || (cell.value && typeof cell.value === "object" && ("formula" in cell.value || "sharedFormula" in cell.value))); }
+  function rowTexts(ws, r) {
+    var out = [], row = ws.getRow(r);
+    for (var c = 1; c <= Math.max(ws.columnCount, 16); c++) out[c] = low(cellText(row.getCell(c)));
+    return out;
+  }
+  function col(cells, re) { for (var i = 1; i < cells.length; i++) if (re.test(cells[i] || "")) return i; return -1; }
+  function cols(cells, re) { var o = []; for (var i = 1; i < cells.length; i++) if (re.test(cells[i] || "")) o.push(i); return o; }
+  function findHeader(ws, test) {
+    for (var r = 1; r <= Math.min(ws.rowCount, 40); r++) {
+      var res = test(rowTexts(ws, r));
+      if (res) { res.row = r; return res; }
+    }
+    return null;
+  }
+  // Data rows under a header: until a fully empty row, a TOTAL row or a signature block
+  function slots(ws, headerRow) {
+    var out = [];
+    for (var r = headerRow + 1; r <= ws.rowCount + 1; r++) {
+      var row = ws.getRow(r), any = false, stop = false;
+      row.eachCell({ includeEmpty: false }, function (cell) {
+        if (cell.value == null || cell.value === "") return;
+        any = true;
+        if (/^total\b|signature/i.test(cellText(cell).trim())) stop = true;
+      });
+      if (!any || stop) break;
+      out.push(r);
+    }
+    return out;
+  }
+  function put(ws, r, c, v) {
+    if (c < 1) return;
+    var cell = ws.getCell(r, c);
+    if (isFormula(cell)) return;
+    cell.value = v == null || v === "" ? null : v;
+  }
+  function putResult(ws, r, c, result) {
+    if (c < 1) return;
+    var cell = ws.getCell(r, c);
+    if (isFormula(cell)) {
+      var f = cell.formula;
+      if (f) cell.value = { formula: f, result: result };
+    } else cell.value = result;
+  }
+  function utcDate(iso) { var p = iso.split("-"); return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])); }
+  var DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+  // Date:, Day: and Shift (D/N): labels anywhere in the header area
+  function setHeaderFields(ws, day) {
+    var d = utcDate(day.date);
+    for (var r = 1; r <= ws.rowCount; r++) {
+      var row = ws.getRow(r);
+      for (var c = 1; c <= Math.max(ws.columnCount, 16); c++) {
+        var t = low(cellText(row.getCell(c)));
+        if (!t) continue;
+        var kind = /^date\s*:?$/.test(t) ? "date" : /^day\s*:?$/.test(t) ? "day" : /^shift\s*\(d\/n\)\s*:?$/.test(t) ? "shift" : null;
+        if (!kind) continue;
+        for (var k = c + 1; k <= c + 4; k++) {
+          var cell = row.getCell(k);
+          if (cell.isMerged && cell.master !== cell) continue;
+          if (isFormula(cell)) break;
+          var v = cell.value;
+          if (kind === "date") {
+            if (v instanceof Date || typeof v === "number") { cell.value = d; break; }
+            if (v == null) continue;
+            break;
+          }
+          if (kind === "day") {
+            if (typeof v === "string" && DAYS.indexOf(v.trim()) >= 0) { cell.value = DAYS[d.getUTCDay()]; break; }
+            if (v == null) continue;
+            break;
+          }
+          if (kind === "shift") {
+            if (typeof v === "string" && /^\s*[dn]\s*$/i.test(v)) { cell.value = day.shift === "N" ? "N" : "D"; break; }
+            if (v == null) continue;
+            break;
+          }
+        }
+      }
+    }
+  }
+  // Keep SUM() totals showing the right number before Excel recalculates
+  function refreshSums(ws, rowsToCheck) {
+    rowsToCheck.forEach(function (r) {
+      ws.getRow(r).eachCell(function (cell) {
+        var f = cell.formula;
+        var m = f && f.match(/^\+?SUM\(([A-Z]+)(\d+):([A-Z]+)(\d+)\)$/i);
+        if (!m || m[1] !== m[3]) return;
+        var c = ws.getColumn(m[1]).number, s = 0;
+        for (var i = +m[2]; i <= +m[4]; i++) {
+          var v = ws.getCell(i, c).value;
+          if (typeof v === "number") s += v; else if (v && typeof v.result === "number") s += v.result;
+        }
+        cell.value = { formula: f, result: s };
+      });
+    });
+  }
+
+  function hoursOf(p, brk) {
+    if (!p.tin || !p.tout) return 0;
+    var a = toMin(p.tin), b = toMin(p.tout);
+    if (a == null || b == null) return 0;
+    var h = (b - a) / 60; if (h < 0) h += 24;
+    if (h > 0) h = Math.max(0, h - (brk || 0));
+    return Math.round(h * 100) / 100;
+  }
+  function toMin(t) { var m = /^(\d{1,2}):(\d{2})/.exec(t || ""); return m ? +m[1] * 60 + +m[2] : null; }
+  function split(h, rule) {
+    var stMax = rule.stMax, otMax = rule.otMax;
+    var st = Math.min(h, stMax), ot = Math.min(Math.max(h - stMax, 0), Math.max(otMax - stMax, 0)), dt = Math.max(h - Math.max(otMax, stMax), 0);
+    return { st: r2(st), ot: r2(ot), dt: r2(dt) };
+  }
+  function r2(x) { return Math.round(x * 100) / 100; }
+
+  function fillSignin(wb, day, settings) {
+    var ws = null, h = null;
+    wb.eachSheet(function (s) {
+      if (ws) return;
+      var found = findHeader(s, function (c) {
+        var n = col(c, /name/), tin = col(c, /^time\s*in\b/), tout = col(c, /^time\s*out\b/);
+        return n > 0 && tin > 0 && tout > 0 ? { n: n, tin: tin, tout: tout, role: col(c, /position|id\s*#|class|title/), act: col(c, /activity|cwp/), sig: cols(c, /signature/) } : null;
+      });
+      if (found) { ws = s; h = found; }
+    });
+    if (!ws) throw new Error("The sign-in template has no row with Name, Time In and Time Out headings.");
+    var rows = slots(ws, h.row);
+    var crew = day.crew;
+    if (crew.length > rows.length) throw new Error("The sign-in sheet has " + rows.length + " rows but the crew has " + crew.length + " people.");
+    // Drop yesterday's handwritten signatures (pictures inside the table), keep logos above it
+    var last = rows.length ? rows[rows.length - 1] : h.row;
+    if (ws._media) ws._media = ws._media.filter(function (m) {
+      var tl = m.range && m.range.tl; if (!tl) return true;
+      var r1 = (tl.nativeRow != null ? tl.nativeRow : Math.floor(tl.row || 0)) + 1;
+      return !(r1 >= h.row && r1 <= last + 1);
+    });
+    rows.forEach(function (r, i) {
+      var p = crew[i];
+      [h.n, h.role, h.tin, h.tout, h.act].concat(h.sig).forEach(function (c) { put(ws, r, c, null); });
+      if (!p) return;
+      put(ws, r, h.n, p.name);
+      put(ws, r, h.role, p.empId ? p.empId + "/" + (p.position || "") : p.position || "");
+      [[h.tin, p.tin], [h.tout, p.tout]].forEach(function (pair) {
+        var m = toMin(pair[1]);
+        if (m == null) return;
+        var cell = ws.getCell(r, pair[0]);
+        cell.value = m / 1440;
+        if (!/h/i.test(cell.numFmt || "")) cell.numFmt = "h:mm";
+      });
+      put(ws, r, h.act, p.activity);
+    });
+    setHeaderFields(ws, day);
+    return ws.name;
+  }
+
+  function fillLem(wb, day, settings) {
+    var staff = null, trades = null, equip = null;
+    wb.eachSheet(function (s) {
+      var t = findHeader(s, function (c) {
+        var n = col(c, /^name$|^employee|^full name|^worker/);
+        if (n < 0) return null;
+        var st = col(c, /straight|^st\b|reg/), tot = col(c, /^total/), hrs = col(c, /^hours?$|^hrs$|^total hours/);
+        var o = { n: n, role: col(c, /^class|position|trade/), st: st, ot: col(c, /^o\.?\s?t\b|overtime/), dt: col(c, /double|^d\.?t\b/), delay: col(c, /delay/),
+          tot: tot >= 0 ? tot : hrs, cwp: col(c, /cwp|description/), cost: col(c, /cost\s*code|^task/), shift: col(c, /^shift/), sub: col(c, /sub\s*id|^subcontract/) };
+        return o.tot > 0 ? o : null;
+      });
+      if (t) { if (t.st > 0) { if (!trades) trades = { ws: s, h: t }; } else if (!staff) staff = { ws: s, h: t }; return; }
+      var e = findHeader(s, function (c) {
+        var d = col(c, /^description|^equipment|^unit/), a = col(c, /asset|unit\s*#|unit\s*no/);
+        return d > 0 && a > 0 ? { d: d, a: a, shift: col(c, /^shift/), std: col(c, /^standard|^std|^operating/), sb: col(c, /standby/), tot: col(c, /^total/), cwp: col(c, /cwp/), cost: col(c, /cost\s*code|^task/) } : null;
+      });
+      if (e && !equip) equip = { ws: s, h: e };
+    });
+    if (!staff && !trades) throw new Error("The LEM template has no tab with Name/Employee and Hours/Total headings.");
+    var brk = settings.breakHrs || 0;
+    var byOrder = function (a, b) { return (a.lemOrder == null ? 1e6 : a.lemOrder) - (b.lemOrder == null ? 1e6 : b.lemOrder); };
+    var staffCrew = day.crew.filter(function (p) { return p.tab !== "trades"; }).slice().sort(byOrder);
+    var tradesCrew = day.crew.filter(function (p) { return p.tab === "trades"; }).slice().sort(byOrder);
+    if (!trades) { staffCrew = staffCrew.concat(tradesCrew); tradesCrew = []; }
+    if (!staff) { tradesCrew = staffCrew.concat(tradesCrew); staffCrew = []; }
+    var used = [];
+
+    if (staff) {
+      var ws = staff.ws, h = staff.h, rows = slots(ws, h.row);
+      if (staffCrew.length > rows.length) throw new Error("The LEM tab “" + ws.name.trim() + "” has " + rows.length + " rows but " + staffCrew.length + " staff are listed.");
+      rows.forEach(function (r, i) {
+        var p = staffCrew[i];
+        [h.n, h.role, h.tot, h.sub].forEach(function (c) { put(ws, r, c, null); });
+        if (!p) return;
+        var hrs = hoursOf(p, brk);
+        put(ws, r, h.n, p.name); put(ws, r, h.role, p.lemClass || p.position); put(ws, r, h.sub, p.sub);
+        if (hrs) putResult(ws, r, h.tot, hrs);
+      });
+      refreshSums(ws, [rows.length ? rows[rows.length - 1] + 1 : h.row + 1]);
+      used.push(ws);
+    }
+    if (trades) {
+      var ws2 = trades.ws, t = trades.h, trows = slots(ws2, t.row);
+      if (tradesCrew.length > trows.length) throw new Error("The LEM tab “" + ws2.name.trim() + "” has " + trows.length + " rows but " + tradesCrew.length + " trades are listed.");
+      // Put night shift people in the rows the template labels Night Shift
+      var label = function (r) { return t.shift > 0 ? low(cellText(ws2.getCell(r, t.shift))) : ""; };
+      var free = trows.slice(), assign = {};
+      var take = function (wantNight) {
+        for (var i = 0; i < free.length; i++) {
+          var isNight = /night/.test(label(free[i]));
+          if (wantNight === isNight) return free.splice(i, 1)[0];
+        }
+        return free.shift();
+      };
+      tradesCrew.forEach(function (p, i) { assign[take(p.shift === "Night")] = p; });
+      trows.forEach(function (r) {
+        var p = assign[r];
+        [t.n, t.role, t.st, t.ot, t.dt, t.delay, t.cwp, t.cost, t.sub].forEach(function (c) { put(ws2, r, c, null); });
+        if (!p) { putResult(ws2, r, t.tot, 0); return; }
+        var hrs = hoursOf(p, brk), sp = split(hrs, settings);
+        put(ws2, r, t.n, p.name); put(ws2, r, t.role, p.lemClass || p.position); put(ws2, r, t.sub, p.sub);
+        if (t.shift > 0) put(ws2, r, t.shift, p.shift === "Night" ? "Night Shift" : "Day Shift");
+        if (hrs) {
+          if (t.st > 0) put(ws2, r, t.st, sp.st);
+          if (t.ot > 0) put(ws2, r, t.ot, sp.ot);
+          if (t.dt > 0) put(ws2, r, t.dt, sp.dt);
+          put(ws2, r, t.cwp, p.cwp); put(ws2, r, t.cost, p.cost);
+        }
+        putResult(ws2, r, t.tot, hrs);
+      });
+      refreshSums(ws2, [trows.length ? trows[trows.length - 1] + 1 : t.row + 1, trows.length ? trows[trows.length - 1] + 2 : t.row + 2]);
+      used.push(ws2);
+    }
+    if (equip) {
+      var ws3 = equip.ws, e = equip.h, erows = slots(ws3, e.row), eq = day.equipment || [];
+      if (eq.length > erows.length) throw new Error("The equipment tab has " + erows.length + " rows but " + eq.length + " pieces of equipment are listed.");
+      erows.forEach(function (r, i) {
+        var q = eq[i];
+        [e.d, e.a, e.std, e.cwp, e.cost].forEach(function (c) { put(ws3, r, c, null); });
+        if (!q) { if (e.sb > 0) put(ws3, r, e.sb, 0); putResult(ws3, r, e.tot, 0); return; }
+        put(ws3, r, e.d, q.desc); put(ws3, r, e.a, q.asset);
+        if (e.shift > 0 && q.shift) put(ws3, r, e.shift, q.shift === "Night" ? "Night Shift" : "Day Shift ");
+        put(ws3, r, e.std, +q.std || 0); put(ws3, r, e.sb, +q.standby || 0);
+        putResult(ws3, r, e.tot, (+q.std || 0) + (+q.standby || 0));
+        put(ws3, r, e.cwp, q.cwp); put(ws3, r, e.cost, q.cost);
+      });
+      refreshSums(ws3, [erows.length ? erows[erows.length - 1] + 1 : e.row + 1, erows.length ? erows[erows.length - 1] + 2 : e.row + 2]);
+      used.push(ws3);
+    }
+    wb.eachSheet(function (s) { setHeaderFields(s, day); });
+  }
+
+  // Built-in layouts, used until the user adds their own files
+  var thin = { style: "thin", color: { argb: "FF9AA0A6" } };
+  function box(cell, bold) { cell.border = { top: thin, left: thin, bottom: thin, right: thin }; if (bold) cell.font = { bold: true }; }
+  function blankSignin(day) {
+    var wb = new ExcelJS.Workbook(), ws = wb.addWorksheet("Sign in Sheet");
+    ws.columns = [{ width: 5 }, { width: 26 }, { width: 30 }, { width: 2 }, { width: 10 }, { width: 18 }, { width: 10 }, { width: 18 }, { width: 26 }];
+    [["Project:", day.project || ""], ["Company:", day.company || ""], ["Date:", utcDate(day.date)], ["Shift (D/N):  ", day.shift || "D"]].forEach(function (kv, i) {
+      ws.getCell(i + 1, 8).value = kv[0]; ws.getCell(i + 1, 8).font = { bold: true }; ws.getCell(i + 1, 9).value = kv[1];
+    });
+    ws.getCell(3, 9).numFmt = "yyyy-mm-dd";
+    ws.getCell(1, 2).value = "Daily Workforce Report"; ws.getCell(1, 2).font = { bold: true, size: 14 };
+    var hd = ["", "Full Name (PRINT)", "ID #/Position", "", "Time In ", "Signature ", "Time Out ", "Signature ", "Activity ID"];
+    hd.forEach(function (t, i) { var c = ws.getCell(6, i + 1); c.value = t || null; box(c, true); });
+    for (var r = 7; r < 37; r++) {
+      for (var c = 1; c <= 9; c++) box(ws.getCell(r, c));
+      ws.getCell(r, 1).value = r - 6; ws.getCell(r, 5).numFmt = "h:mm"; ws.getCell(r, 7).numFmt = "h:mm";
+    }
+    ws.getCell(38, 2).value = "Signature";
+    return wb;
+  }
+  function blankLem(day) {
+    var wb = new ExcelJS.Workbook();
+    function head(ws, title) {
+      ws.getCell(2, 2).value = title; ws.getCell(2, 2).font = { bold: true, size: 14 };
+      ws.getCell(4, 2).value = "Project:"; ws.getCell(4, 3).value = day.project || "";
+      ws.getCell(4, 8).value = "Date:"; ws.getCell(4, 9).value = utcDate(day.date); ws.getCell(4, 9).numFmt = "yyyy-mm-dd";
+      ws.getCell(5, 8).value = "Day:"; ws.getCell(5, 9).value = DAYS[utcDate(day.date).getUTCDay()];
+    }
+    var s = wb.addWorksheet("Labour STAFF");
+    s.columns = [{ width: 5 }, { width: 28 }, { width: 26 }, { width: 10 }];
+    head(s, "Daily LEM Report - Indirect Staff");
+    ["No.", "Name", "Class", "Hours"].forEach(function (t, i) { var c = s.getCell(7, i + 1); c.value = t; box(c, true); });
+    for (var r = 8; r < 28; r++) { for (var c = 1; c <= 4; c++) box(s.getCell(r, c)); s.getCell(r, 1).value = r - 7; }
+    s.getCell(28, 1).value = "TOTAL INDIRECT"; s.getCell(28, 4).value = { formula: "SUM(D8:D27)", result: 0 }; s.getCell(28, 1).font = { bold: true };
+    var t = wb.addWorksheet("Labour TRADES");
+    t.columns = [{ width: 5 }, { width: 26 }, { width: 18 }, { width: 12 }, { width: 10 }, { width: 10 }, { width: 10 }, { width: 10 }, { width: 10 }, { width: 22 }, { width: 18 }];
+    head(t, "Daily LEM Report - Direct Labour");
+    ["No.", "Employee", "Class", "Shift", "Straight Time Hrs", "O.T Hours", "Double Time Hours", "Delay Hours", "Total", "CWP ID Description", "Task / Cost Code"].forEach(function (x, i) { var c = t.getCell(7, i + 1); c.value = x; box(c, true); c.alignment = { wrapText: true }; });
+    for (var r2_ = 8; r2_ < 38; r2_++) {
+      for (var c2 = 1; c2 <= 11; c2++) box(t.getCell(r2_, c2));
+      t.getCell(r2_, 1).value = r2_ - 7; t.getCell(r2_, 4).value = r2_ < 28 ? "Day Shift" : "Night Shift";
+      t.getCell(r2_, 9).value = { formula: "SUM(E" + r2_ + ":H" + r2_ + ")", result: 0 };
+    }
+    t.getCell(38, 1).value = "TOTAL DIRECT"; t.getCell(38, 1).font = { bold: true };
+    ["E", "F", "G", "H", "I"].forEach(function (L) { t.getCell(L + "38").value = { formula: "SUM(" + L + "8:" + L + "37)", result: 0 }; });
+    var e = wb.addWorksheet("Equipment");
+    e.columns = [{ width: 5 }, { width: 24 }, { width: 12 }, { width: 12 }, { width: 10 }, { width: 10 }, { width: 10 }, { width: 22 }, { width: 18 }];
+    head(e, "Daily LEM Report - Equipment");
+    ["No.", "Description", "Asset Code", "Shift", "Standard Hours", "Standby Hours", "Total", "CWP ID Description", "Task / Cost Code"].forEach(function (x, i) { var c = e.getCell(7, i + 1); c.value = x; box(c, true); c.alignment = { wrapText: true }; });
+    for (var r3 = 8; r3 < 28; r3++) {
+      for (var c3 = 1; c3 <= 9; c3++) box(e.getCell(r3, c3));
+      e.getCell(r3, 1).value = r3 - 7; e.getCell(r3, 4).value = "Day Shift ";
+      e.getCell(r3, 7).value = { formula: "SUM(E" + r3 + ":F" + r3 + ")", result: 0 };
+    }
+    e.getCell(28, 1).value = "TOTAL EQUIPMENT"; e.getCell(28, 1).font = { bold: true };
+    ["E", "F", "G"].forEach(function (L) { e.getCell(L + "28").value = { formula: "SUM(" + L + "8:" + L + "27)", result: 0 }; });
+    return wb;
+  }
+
+  function fileName(tplName, iso, fallback) {
+    if (!tplName) return fallback;
+    var p = iso.split("-");
+    var n = tplName.replace(/(\d{4})([.\-_])(\d{2})\2(\d{2})/, function (m, y, sep) { return p[0] + sep + p[1] + sep + p[2]; });
+    if (n === tplName) n = iso + " - " + tplName;
+    return n;
+  }
+
+  // tpl: {bytes: ArrayBuffer|Uint8Array, name} or null
+  async function build(kind, day, settings, tpl) {
+    var wb;
+    if (tpl && tpl.bytes) {
+      wb = new ExcelJS.Workbook(); await wb.xlsx.load(tpl.bytes);
+      // Yesterday's saved formula results would show the old date; let the program recalculate them
+      wb.eachSheet(function (s) {
+        s.eachRow(function (row) {
+          row.eachCell(function (cell) {
+            var v = cell.value;
+            if (v && typeof v === "object" && v.formula && "result" in v) cell.value = { formula: v.formula };
+          });
+        });
+      });
+    }
+    else wb = kind === "signin" ? blankSignin(day) : blankLem(day);
+    if (kind === "signin") fillSignin(wb, day, settings); else fillLem(wb, day, settings);
+    wb.calcProperties = wb.calcProperties || {};
+    wb.calcProperties.fullCalcOnLoad = true;
+    var buf = await wb.xlsx.writeBuffer();
+    var p = day.date.split("-");
+    var name = kind === "signin"
+      ? fileName(tpl && tpl.name, day.date, p.join(".") + " - Daily Workforce Report.xlsx")
+      : fileName(tpl && tpl.name, day.date, day.date + " - LEM Report.xlsx");
+    return { buffer: buf, name: name };
+  }
+
+  return { build: build, hoursOf: hoursOf, split: split, toMin: toMin };
+})();
+
+
+// ---------- Turn parsed sign-in / LEM files into a day's form data ----------
+var Importer = (function () {
+  var TRADE_WORDS = /foreman|labou?rer|operator|carpenter|welder|fitter|electrician|helper|apprentice|journeyman|rigger|driver|millwright|pipefitter|ironworker|scaffold/i;
+  function tidyName(raw) {
+    var s = String(raw || "").replace(/\s+/g, " ").trim();
+    if (s.indexOf(",") >= 0) { var p = s.split(","); return p[0].trim() + ", " + p.slice(1).join(",").trim(); }
+    return s;
+  }
+  function hhmm(h) {
+    if (h == null) return "";
+    var t = Math.round(h * 60), hh = Math.floor(t / 60) % 24, mm = t % 60;
+    return String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
+  }
+  var uid = function () { return Math.random().toString(36).slice(2, 10); };
+  function shiftOf(s) { return /night/i.test(s || "") ? "Night" : "Day"; }
+
+  function fromFiles(signin, lem) {
+    var pairs = signin && lem ? Logic.match(signin.people, lem.people)
+      : signin ? signin.people.map(function (s) { return { s: s, l: null }; })
+      : lem.people.map(function (l) { return { s: null, l: l }; });
+    // Sign-in order first; people only on the LEM go at the end
+    var pos = function (pr) { return pr.s ? signin.people.indexOf(pr.s) : 1e4 + lem.people.indexOf(pr.l); };
+    pairs = pairs.slice().sort(function (x, y) { return pos(x) - pos(y); });
+    var crew = pairs.map(function (pr) {
+      var s = pr.s, l = pr.l;
+      var roleRaw = s ? s.roleRaw || "" : "";
+      var m = /^\s*(\d+)\s*\/\s*(.*)$/.exec(roleRaw);
+      var position = m ? m[2].trim() : roleRaw.trim() || (l ? l.role : "");
+      var tab = l ? l.kind : TRADE_WORDS.test(position) ? "trades" : "staff";
+      return {
+        id: uid(), name: tidyName(s ? s.raw : l.raw), empId: m ? m[1] : "", position: position,
+        tab: tab, lemClass: l && l.role ? l.role : position,
+        shift: shiftOf(l && l.shift), tin: s ? hhmm(s.tin) : "", tout: s ? hhmm(s.tout) : "",
+        activity: s ? s.activity || "" : "", cwp: l ? l.cwp || "" : "", cost: l ? l.cost || "" : "", sub: l ? l.sub || "" : "",
+        lemOrder: l ? (l.kind === "trades" ? 1000 : 0) + l.order : null
+      };
+    });
+    var equipment = (lem && lem.equipment || []).map(function (q) {
+      return { id: uid(), desc: q.desc, asset: q.asset, shift: shiftOf(q.shift), std: q.std || 0, standby: q.standby || 0, cwp: q.cwp, cost: q.cost };
+    });
+    return { crew: crew, equipment: equipment, date: (signin && signin.date) || (lem && lem.date) || null };
+  }
+  return { fromFiles: fromFiles, tidyName: tidyName, hhmm: hhmm, uid: uid };
+})();
 </script>
 <script>
 // ---------- UI ----------
@@ -601,7 +1189,7 @@ if (typeof module !== "undefined") module.exports = Logic;
   drop.addEventListener("drop", function (e) { handleFiles(e.dataTransfer.files); });
   // Dropping anywhere on the page also works
   window.addEventListener("dragover", function (e) { e.preventDefault(); });
-  window.addEventListener("drop", function (e) { e.preventDefault(); if (!drop.contains(e.target)) handleFiles(e.dataTransfer.files); });
+  window.addEventListener("drop", function (e) { e.preventDefault(); if (!drop.contains(e.target) && !document.getElementById("tab-check").hidden) handleFiles(e.dataTransfer.files); });
 
   function setView(v) {
     view = v;
@@ -905,6 +1493,477 @@ if (typeof module !== "undefined") module.exports = Logic;
   ]);
   state.lem.file = "Example LEM.xlsx";
   render();
+})();
+</script>
+<script id="form">
+// ---------- Saved data: the artifact's database when available, else this browser ----------
+var Store = (function () {
+  var db = null, mode = "local";
+  var ready = (async function () {
+    try {
+      if (window.claude && typeof window.claude.use === "function") {
+        db = await window.claude.use("db");
+        if (db) mode = "db";
+      }
+    } catch (e) { db = null; }
+  })();
+  var LS = "lemcheck:";
+  function lsGet(k) { try { var v = localStorage.getItem(LS + k); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem(LS + k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+  function clone(x) { return JSON.parse(JSON.stringify(x)); }
+  return {
+    ready: ready,
+    mode: function () { return mode; },
+    get: async function (path) {
+      await ready;
+      if (db) { var s = await db.doc(path).get(); return s.exists ? clone(s.data()) : null; }
+      return lsGet(path);
+    },
+    set: async function (path, data) {
+      await ready;
+      if (db) return db.doc(path).set(data);
+      if (!lsSet(path, data)) throw { code: "local_full", message: "This browser's storage is full." };
+    },
+    days: async function () {
+      await ready;
+      if (db) {
+        var q = await db.collection("days").orderBy("date", "desc").limit(200).get();
+        return q.docs.map(function (d) { return clone(d.data()); });
+      }
+      var out = [];
+      try {
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
+          if (k && k.indexOf(LS + "days/") === 0) { var v = lsGet(k.slice(LS.length)); if (v) out.push(v); }
+        }
+      } catch (e) {}
+      return out.sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+    }
+  };
+})();
+
+// ---------- Fill-in form ----------
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function todayIso() { var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function niceDate(iso) {
+    if (!iso) return "";
+    var p = iso.split("-"), d = new Date(+p[0], +p[1] - 1, +p[2]);
+    return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+  }
+  function fmt(h) { return (Math.round(h * 100) / 100).toString(); }
+  var uid = Importer.uid;
+
+  var day = { date: todayIso(), shift: "D", crew: [], equipment: [] };
+  var settings = { stMax: 8, otMax: 11, breakHrs: 0 };
+  var templates = { signin: null, lem: null };   // {name, bytes}
+  var savedDays = [];
+  var ticked = {};
+  var undoDay = null;
+  var canSave = true;
+
+  // ----- tabs -----
+  function showTab(t) {
+    $("tab-fill").hidden = t !== "fill"; $("tab-check").hidden = t !== "check";
+    $("tabbtn-fill").setAttribute("aria-selected", t === "fill"); $("tabbtn-check").setAttribute("aria-selected", t === "check");
+    try { localStorage.setItem("lemcheck.tab", t); } catch (e) {}
+  }
+  $("tabbtn-fill").addEventListener("click", function () { showTab("fill"); });
+  $("tabbtn-check").addEventListener("click", function () { showTab("check"); });
+  try { if (localStorage.getItem("lemcheck.tab") === "check") showTab("check"); } catch (e) {}
+
+  // ----- saving -----
+  var saveTimer = null, saving = false, again = false;
+  function saveState(text, err) { var el = $("save-state"); el.textContent = text; el.classList.toggle("err", !!err); }
+  function scheduleSave() {
+    if (!canSave) return;
+    saveState("Saving…");
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveNow, 1200);
+  }
+  async function saveNow() {
+    if (saving) { again = true; return; }
+    saving = true;
+    try {
+      day.savedAt = new Date().toISOString();
+      await Store.set("days/" + day.date, JSON.parse(JSON.stringify(day)));
+      var where = Store.mode() === "db" ? "Saved" : "Saved in this browser only";
+      saveState(where + " · " + new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }));
+      var i = savedDays.findIndex(function (d) { return d.date === day.date; });
+      var copy = JSON.parse(JSON.stringify(day));
+      if (i >= 0) savedDays[i] = copy; else { savedDays.push(copy); savedDays.sort(function (a, b) { return a.date < b.date ? 1 : -1; }); renderCopyFrom(); }
+    } catch (e) {
+      if (e && e.code === "invalid_argument") { canSave = false; saveState("You can view this page but not save changes. Downloads still work.", true); }
+      else if (e && e.code === "quota_exceeded") saveState("Couldn't save: the page's storage is full.", true);
+      else saveState("Couldn't save just now. Your changes are still on screen.", true);
+    }
+    saving = false;
+    if (again) { again = false; saveNow(); }
+  }
+  var settingsTimer = null;
+  function saveSettings() {
+    clearTimeout(settingsTimer);
+    settingsTimer = setTimeout(function () { Store.set("settings/main", settings).catch(function () {}); }, 1200);
+  }
+
+  // ----- templates (the user's own Excel layouts) -----
+  function toB64(bytes) {
+    var u = new Uint8Array(bytes), s = "";
+    for (var i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
+    return btoa(s);
+  }
+  function fromB64(b) { var s = atob(b), u = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
+  var CHUNK = 190000;
+  async function saveTemplate(kind, name, bytes) {
+    var b = toB64(bytes), parts = Math.ceil(b.length / CHUNK);
+    for (var i = 0; i < parts; i++) await Store.set("templates/" + kind + "-" + i, { data: b.slice(i * CHUNK, (i + 1) * CHUNK) });
+    await Store.set("templates/" + kind, { name: name, parts: parts, savedAt: new Date().toISOString() });
+  }
+  async function loadTemplate(kind) {
+    var meta = await Store.get("templates/" + kind);
+    if (!meta || !meta.parts) return null;
+    var s = "";
+    for (var i = 0; i < meta.parts; i++) { var p = await Store.get("templates/" + kind + "-" + i); if (!p) return null; s += p.data; }
+    return { name: meta.name, bytes: fromB64(s) };
+  }
+  function renderLayout() {
+    var t = [];
+    t.push("Sign-in layout: " + (templates.signin ? "your file (" + templates.signin.name + ")" : "built-in"));
+    t.push("LEM layout: " + (templates.lem ? "your file (" + templates.lem.name + ")" : "built-in"));
+    $("gen-layout").textContent = t.join(" · ") + (templates.signin && templates.lem ? "" : ". Drop yesterday's files above to use your own layout.");
+  }
+
+  // ----- copy from a saved day -----
+  function renderCopyFrom() {
+    var sel = $("copy-from"), others = savedDays.filter(function (d) { return d.date !== day.date; });
+    var prev = others.filter(function (d) { return d.date < day.date; })[0] || others[0];
+    sel.innerHTML = others.map(function (d) {
+      return '<option value="' + esc(d.date) + '"' + (prev && d.date === prev.date ? " selected" : "") + ">" + esc(niceDate(d.date)) + " · " + (d.crew || []).length + " people</option>";
+    }).join("");
+    var has = others.length > 0;
+    sel.hidden = !has; $("copy-btn").hidden = !has;
+    $("copy-title").textContent = has ? "Start from a saved day" : "No saved days yet";
+    $("copy-hint").textContent = has ? "Copies everyone, their times and the equipment. Then change what's different today."
+      : "Each day you fill in here is saved. Tomorrow you can copy it and just change what's different. To start, drop yesterday's files or add people below.";
+  }
+  $("copy-btn").addEventListener("click", function () {
+    var src = savedDays.find(function (d) { return d.date === $("copy-from").value; });
+    if (!src) return;
+    undoDay = JSON.parse(JSON.stringify(day));
+    day.crew = (src.crew || []).map(function (p) { var q = Object.assign({}, p); q.id = uid(); return q; });
+    day.equipment = (src.equipment || []).map(function (p) { var q = Object.assign({}, p); q.id = uid(); return q; });
+    day.shift = src.shift || day.shift; $("f-shift").value = day.shift;
+    ticked = {};
+    $("undo-btn").hidden = false;
+    fillNotice("ok", "Copied " + day.crew.length + " people and " + day.equipment.length + " pieces of equipment from " + niceDate(src.date) + ".");
+    renderAll(); scheduleSave();
+  });
+  $("undo-btn").addEventListener("click", function () {
+    if (!undoDay) return;
+    day = undoDay; undoDay = null; $("undo-btn").hidden = true; $("fill-notices").innerHTML = "";
+    renderAll(); scheduleSave();
+  });
+
+  function fillNotice(kind, text) {
+    var d = document.createElement("div");
+    d.className = "notice " + (kind === "ok" ? "example" : kind);
+    d.textContent = text;
+    $("fill-notices").innerHTML = ""; $("fill-notices").appendChild(d);
+  }
+
+  // ----- import yesterday's files -----
+  var fdrop = $("fill-drop"), finput = $("fill-file");
+  fdrop.addEventListener("click", function () { finput.click(); });
+  fdrop.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); finput.click(); } });
+  finput.addEventListener("change", function () { importFiles(finput.files); finput.value = ""; });
+  ["dragenter", "dragover"].forEach(function (ev) { fdrop.addEventListener(ev, function (e) { e.preventDefault(); fdrop.classList.add("over"); }); });
+  ["dragleave", "drop"].forEach(function (ev) { fdrop.addEventListener(ev, function (e) { e.preventDefault(); fdrop.classList.remove("over"); }); });
+  fdrop.addEventListener("drop", function (e) { importFiles(e.dataTransfer.files); });
+  window.addEventListener("drop", function (e) { if (!$("tab-fill").hidden && !fdrop.contains(e.target)) { e.preventDefault(); importFiles(e.dataTransfer.files); } });
+
+  function readFile(f) {
+    return new Promise(function (res, rej) { var fr = new FileReader(); fr.onload = function () { res(fr.result); }; fr.onerror = rej; fr.readAsArrayBuffer(f); });
+  }
+  async function importFiles(files) {
+    if (!files || !files.length) return;
+    files = Array.prototype.slice.call(files);   // the input's live list empties when it is reset
+    var found = { signin: null, lem: null }, bad = [];
+    for (var i = 0; i < files.length; i++) {
+      var f = files[i];
+      try {
+        var buf = await readFile(f);
+        var res = Logic.readWorkbook(XLSX.read(new Uint8Array(buf), { type: "array" }));
+        if (res.kind) found[res.kind] = { data: res.data, name: f.name, bytes: new Uint8Array(buf) };
+        else bad.push(f.name);
+      } catch (e) { bad.push(f.name); }
+    }
+    if (!found.signin && !found.lem) { fillNotice("err", (bad.join(", ") || "That file") + " isn't a sign-in sheet or a LEM this page can read."); return; }
+    var imp = Importer.fromFiles(found.signin && found.signin.data, found.lem && found.lem.data);
+    undoDay = JSON.parse(JSON.stringify(day));
+    day.crew = imp.crew;
+    if (found.lem) day.equipment = imp.equipment;
+    ticked = {};
+    $("undo-btn").hidden = false;
+    var kept = [];
+    for (var k in found) {
+      if (!found[k]) continue;
+      templates[k] = { name: found[k].name, bytes: found[k].bytes };
+      kept.push(k === "signin" ? "sign-in" : "LEM");
+      try { await saveTemplate(k, found[k].name, found[k].bytes); } catch (e) {}
+    }
+    var msg = "Filled in " + day.crew.length + " people" + (found.lem ? " and " + day.equipment.length + " pieces of equipment" : "") +
+      " from " + kept.join(" and ") + (imp.date ? " (" + niceDate(imp.date) + ")" : "") + ". The date is still " + niceDate(day.date) + ".";
+    if (!found.signin || !found.lem) msg += " Drop the " + (found.signin ? "LEM" : "sign-in") + " too so its layout is used.";
+    fillNotice("ok", msg);
+    renderAll(); renderLayout(); scheduleSave();
+  }
+
+  // ----- crew table -----
+  function hoursOf(p) { return Builder.hoursOf(p, 0); }
+  function lemHours(p) { return Builder.hoursOf(p, settings.breakHrs); }
+  function opt(v, label, cur) { return '<option value="' + v + '"' + (v === cur ? " selected" : "") + ">" + label + "</option>"; }
+  function crewRow(p, i) {
+    var h = hoursOf(p), partial = (!!p.tin) !== (!!p.tout);
+    return '<tr data-id="' + p.id + '" class="' + (partial ? "bad" : h ? "" : "off") + '">' +
+      '<td class="tick"><input type="checkbox" data-tick ' + (ticked[p.id] ? "checked" : "") + ' aria-label="Tick ' + esc(p.name) + '"></td>' +
+      '<td class="sticky"><input class="w-name" data-f="name" value="' + esc(p.name) + '" placeholder="Last, First" aria-label="Name"></td>' +
+      '<td><input class="w-id" data-f="empId" value="' + esc(p.empId) + '" aria-label="ID number"></td>' +
+      '<td><input class="w-pos" data-f="position" value="' + esc(p.position) + '" aria-label="Position"></td>' +
+      '<td><select data-f="tab" aria-label="LEM tab">' + opt("staff", "Staff", p.tab) + opt("trades", "Trades", p.tab) + "</select></td>" +
+      '<td><input class="w-cls" data-f="lemClass" value="' + esc(p.lemClass) + '" aria-label="LEM class"></td>' +
+      '<td><select data-f="shift" aria-label="Shift">' + opt("Day", "Day", p.shift) + opt("Night", "Night", p.shift) + "</select></td>" +
+      '<td><input type="time" data-f="tin" value="' + esc(p.tin) + '" aria-label="Time in"></td>' +
+      '<td><input type="time" data-f="tout" value="' + esc(p.tout) + '" aria-label="Time out"></td>' +
+      '<td class="calc" data-c="hrs"></td><td class="calc" data-c="split"></td>' +
+      '<td><input class="w-act" data-f="activity" value="' + esc(p.activity) + '" aria-label="Activity ID"></td>' +
+      '<td><input class="w-cwp" data-f="cwp" value="' + esc(p.cwp) + '" aria-label="CWP description"></td>' +
+      '<td><input class="w-cost" data-f="cost" value="' + esc(p.cost) + '" aria-label="Cost code"></td>' +
+      '<td><div class="row-tools"><button type="button" class="icon" data-act="up" aria-label="Move up">↑</button><button type="button" class="icon" data-act="down" aria-label="Move down">↓</button><button type="button" class="icon" data-act="del" aria-label="Remove ' + esc(p.name) + '">✕</button></div></td></tr>';
+  }
+  function updateCalc(tr, p) {
+    var h = hoursOf(p), lh = lemHours(p), partial = (!!p.tin) !== (!!p.tout);
+    tr.className = partial ? "bad" : h ? "" : "off";
+    var hc = tr.querySelector('[data-c="hrs"]'), sc = tr.querySelector('[data-c="split"]');
+    hc.textContent = partial ? (p.tin ? "no out" : "no in") : h ? fmt(lh) : "off";
+    hc.className = "calc" + (h ? "" : " off");
+    if (p.tab === "trades" && lh) { var s = Builder.split(lh, settings); sc.textContent = fmt(s.st) + " · " + fmt(s.ot) + " · " + fmt(s.dt); }
+    else sc.textContent = "";
+  }
+  function renderCrew() {
+    var tb = $("crew-rows");
+    if (!day.crew.length) {
+      tb.innerHTML = '<tr class="empty-row"><td colspan="15">Nobody on the crew yet. Copy a saved day, drop yesterday\'s files, or add people one at a time.</td></tr>';
+    } else {
+      tb.innerHTML = day.crew.map(crewRow).join("");
+      Array.prototype.forEach.call(tb.rows, function (tr, i) { updateCalc(tr, day.crew[i]); });
+    }
+    renderTicks(); renderSummary();
+  }
+  function findP(tr) { var id = tr && tr.getAttribute("data-id"); return day.crew.find(function (p) { return p.id === id; }); }
+  $("crew-rows").addEventListener("input", function (e) {
+    var t = e.target, f = t.getAttribute("data-f"), tr = t.closest("tr"), p = findP(tr);
+    if (!p || !f) return;
+    if (f === "position" && (!p.lemClass || p.lemClass === p.position)) { p.lemClass = t.value; tr.querySelector('[data-f="lemClass"]').value = t.value; }
+    p[f] = t.value;
+    updateCalc(tr, p); renderSummary(); scheduleSave();
+  });
+  $("crew-rows").addEventListener("change", function (e) {
+    var t = e.target, tr = t.closest("tr"), p = findP(tr);
+    if (!p) return;
+    if (t.hasAttribute("data-tick")) { if (t.checked) ticked[p.id] = 1; else delete ticked[p.id]; renderTicks(); return; }
+    var f = t.getAttribute("data-f");
+    if (f === "name") { t.value = Importer.tidyName(t.value); p.name = t.value; scheduleSave(); }
+  });
+  $("crew-rows").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-act]"); if (!b) return;
+    var tr = b.closest("tr"), p = findP(tr), i = day.crew.indexOf(p), act = b.getAttribute("data-act");
+    if (act === "del") { day.crew.splice(i, 1); delete ticked[p.id]; }
+    if (act === "up" && i > 0) { day.crew.splice(i, 1); day.crew.splice(i - 1, 0, p); }
+    if (act === "down" && i < day.crew.length - 1) { day.crew.splice(i, 1); day.crew.splice(i + 1, 0, p); }
+    renderCrew(); scheduleSave();
+    var again = document.querySelector('#crew-rows tr[data-id="' + (p && p.id) + '"] button[data-act="' + act + '"]');
+    if (again && act !== "del") again.focus();
+  });
+  $("add-person").addEventListener("click", function () {
+    var last = day.crew[day.crew.length - 1] || {};
+    var p = { id: uid(), name: "", empId: "", position: "", tab: last.tab || "trades", lemClass: "", shift: "Day", tin: "", tout: "", activity: last.activity || "", cwp: last.cwp || "", cost: last.cost || "", sub: "", lemOrder: null };
+    day.crew.push(p); renderCrew(); scheduleSave();
+    var inp = document.querySelector('#crew-rows tr[data-id="' + p.id + '"] [data-f="name"]'); if (inp) inp.focus();
+  });
+  $("clear-times").addEventListener("click", function () {
+    day.crew.forEach(function (p) { p.tin = ""; p.tout = ""; }); renderCrew(); scheduleSave();
+  });
+
+  // ----- bulk actions on ticked rows -----
+  function tickedList() { return day.crew.filter(function (p) { return ticked[p.id]; }); }
+  function renderTicks() {
+    var n = tickedList().length;
+    $("bulk-count").textContent = n ? n + " ticked" : "Tick people to change several at once";
+    ["bulk-apply", "bulk-clear", "bulk-remove"].forEach(function (id) { $(id).disabled = !n; });
+    $("tick-all").checked = n > 0 && n === day.crew.length;
+  }
+  $("tick-all").addEventListener("change", function () {
+    ticked = {}; if (this.checked) day.crew.forEach(function (p) { ticked[p.id] = 1; }); renderCrew();
+  });
+  $("bulk-apply").addEventListener("click", function () {
+    var a = $("bulk-in").value, b = $("bulk-out").value;
+    tickedList().forEach(function (p) { p.tin = a; p.tout = b; }); renderCrew(); scheduleSave();
+  });
+  $("bulk-clear").addEventListener("click", function () {
+    tickedList().forEach(function (p) { p.tin = ""; p.tout = ""; }); renderCrew(); scheduleSave();
+  });
+  $("bulk-remove").addEventListener("click", function () {
+    day.crew = day.crew.filter(function (p) { return !ticked[p.id]; }); ticked = {}; renderCrew(); scheduleSave();
+  });
+
+  // ----- equipment -----
+  function equipRow(q) {
+    return '<tr data-id="' + q.id + '">' +
+      '<td class="sticky"><input class="w-desc" data-f="desc" value="' + esc(q.desc) + '" aria-label="Description"></td>' +
+      '<td><input class="w-id" data-f="asset" value="' + esc(q.asset) + '" aria-label="Asset code"></td>' +
+      '<td><select data-f="shift" aria-label="Shift">' + opt("Day", "Day", q.shift) + opt("Night", "Night", q.shift) + "</select></td>" +
+      '<td class="calc"><input type="number" min="0" step="0.5" data-f="std" value="' + esc(q.std) + '" aria-label="Standard hours"></td>' +
+      '<td class="calc"><input type="number" min="0" step="0.5" data-f="standby" value="' + esc(q.standby) + '" aria-label="Standby hours"></td>' +
+      '<td class="calc" data-c="tot">' + fmt((+q.std || 0) + (+q.standby || 0)) + "</td>" +
+      '<td><input class="w-cwp" data-f="cwp" value="' + esc(q.cwp) + '" aria-label="CWP description"></td>' +
+      '<td><input class="w-cost" data-f="cost" value="' + esc(q.cost) + '" aria-label="Cost code"></td>' +
+      '<td><button type="button" class="icon" data-act="del" aria-label="Remove ' + esc(q.desc) + '">✕</button></td></tr>';
+  }
+  function renderEquip() {
+    $("equip-rows").innerHTML = day.equipment.length ? day.equipment.map(equipRow).join("")
+      : '<tr class="empty-row"><td colspan="9">No equipment listed. Add the trucks and machines on site today.</td></tr>';
+    $("equip-count").textContent = day.equipment.length ? day.equipment.length + " listed" : "";
+  }
+  function findQ(tr) { var id = tr && tr.getAttribute("data-id"); return day.equipment.find(function (q) { return q.id === id; }); }
+  $("equip-rows").addEventListener("input", function (e) {
+    var t = e.target, f = t.getAttribute("data-f"), tr = t.closest("tr"), q = findQ(tr);
+    if (!q || !f) return;
+    q[f] = t.type === "number" ? (t.value === "" ? 0 : +t.value) : t.value;
+    tr.querySelector('[data-c="tot"]').textContent = fmt((+q.std || 0) + (+q.standby || 0));
+    scheduleSave();
+  });
+  $("equip-rows").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-act]"); if (!b) return;
+    var q = findQ(b.closest("tr")); day.equipment.splice(day.equipment.indexOf(q), 1); renderEquip(); scheduleSave();
+  });
+  $("add-equip").addEventListener("click", function () {
+    var q = { id: uid(), desc: "", asset: "", shift: "Day", std: 0, standby: 0, cwp: "", cost: "" };
+    day.equipment.push(q); renderEquip(); scheduleSave();
+    var inp = document.querySelector('#equip-rows tr[data-id="' + q.id + '"] [data-f="desc"]'); if (inp) inp.focus();
+  });
+
+  // ----- summary -----
+  function renderSummary() {
+    var working = 0, staffH = 0, tradesH = 0, partial = 0;
+    day.crew.forEach(function (p) {
+      var h = lemHours(p);
+      if ((!!p.tin) !== (!!p.tout)) partial++;
+      if (h) { working++; if (p.tab === "trades") tradesH += h; else staffH += h; }
+    });
+    $("crew-count").textContent = day.crew.length ? day.crew.length + " listed · " + working + " working" : "";
+    $("gen-sum").innerHTML = esc(niceDate(day.date)) + " · " + working + " working · " + fmt(staffH + tradesH) + " hrs " +
+      "<span>(staff " + fmt(staffH) + " · trades " + fmt(tradesH) + ")</span>" +
+      (partial ? ' <span style="color:var(--bad)">· ' + partial + " missing a time in or out</span>" : "");
+  }
+
+  // ----- day fields & rules -----
+  $("f-date").addEventListener("change", async function () {
+    var v = this.value; if (!v) { this.value = day.date; return; }
+    var existing = savedDays.find(function (d) { return d.date === v; });
+    if (existing) {
+      day = JSON.parse(JSON.stringify(existing));
+      day.crew = day.crew || []; day.equipment = day.equipment || [];
+      fillNotice("ok", "Opened the saved " + niceDate(v) + ".");
+    } else {
+      day.date = v;
+      scheduleSave();
+    }
+    undoDay = null; $("undo-btn").hidden = true; ticked = {};
+    $("f-shift").value = day.shift || "D";
+    renderAll();
+  });
+  $("f-shift").addEventListener("change", function () { day.shift = this.value; scheduleSave(); });
+  [["r-st", "stMax"], ["r-ot", "otMax"], ["r-break", "breakHrs"]].forEach(function (pair) {
+    $(pair[0]).addEventListener("input", function () {
+      var v = parseFloat(this.value); settings[pair[1]] = isNaN(v) ? 0 : v;
+      Array.prototype.forEach.call($("crew-rows").rows, function (tr) { var p = findP(tr); if (p) updateCalc(tr, p); });
+      renderSummary(); saveSettings();
+    });
+  });
+
+  // ----- downloads -----
+  var dlPromise = window.claude && typeof window.claude.use === "function" ? window.claude.use("downloads").catch(function () { return null; }) : Promise.resolve(undefined);
+  function genMsg(kind, text) { var el = $("gen-msg"); el.className = "gen-msg " + (kind || ""); el.textContent = text; }
+  async function offer(file) {
+    var blob = new Blob([file.buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    var dl = await dlPromise;
+    if (dl) {
+      try { await dl.save({ filename: file.name, data: blob }); return true; }
+      catch (e) { if (e && e.code === "declined") return false; throw e; }
+    }
+    if (dl === null) throw { code: "unavailable" };
+    var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = file.name;
+    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+    return true;
+  }
+  function problems() {
+    var out = [];
+    day.crew.forEach(function (p) {
+      if (!p.name.trim()) out.push("a row has no name");
+      else if ((!!p.tin) !== (!!p.tout)) out.push(p.name + " has a time " + (p.tin ? "in but no time out" : "out but no time in"));
+    });
+    return out;
+  }
+  async function generate(kinds) {
+    var probs = problems();
+    if (probs.length) { genMsg("err", "Fix this first: " + probs.slice(0, 3).join("; ") + (probs.length > 3 ? " (and " + (probs.length - 3) + " more)" : "") + "."); return; }
+    if (!day.crew.length) { genMsg("err", "Add the crew first."); return; }
+    genMsg("", "Making the file" + (kinds.length > 1 ? "s" : "") + "…");
+    try {
+      var saved = [];
+      for (var i = 0; i < kinds.length; i++) {
+        var f = await Builder.build(kinds[i], day, settings, templates[kinds[i]]);
+        if (await offer(f)) saved.push(f.name);
+      }
+      clearTimeout(saveTimer); if (canSave) saveNow();
+      genMsg(saved.length ? "ok" : "", saved.length ? "Saved " + saved.join(" and ") + "." : "Download cancelled.");
+    } catch (e) {
+      if (e && e.code === "unavailable") genMsg("err", "Downloads aren't available in this view. Open the page in claude.ai to download.");
+      else if (e && e.code === "rate_limited") genMsg("err", "A download prompt is already open. Finish it, then try again.");
+      else genMsg("err", (e && e.message) || "Couldn't make the file.");
+    }
+  }
+  $("dl-signin").addEventListener("click", function () { generate(["signin"]); });
+  $("dl-lem").addEventListener("click", function () { generate(["lem"]); });
+  $("dl-both").addEventListener("click", function () { generate(["signin", "lem"]); });
+
+  function renderAll() {
+    $("f-date").value = day.date; $("f-shift").value = day.shift || "D";
+    renderCrew(); renderEquip(); renderCopyFrom(); renderSummary();
+  }
+
+  // ----- start -----
+  $("f-date").value = day.date;
+  renderAll(); renderLayout();
+  saveState("Loading saved days…");
+  (async function () {
+    try {
+      var s = await Store.get("settings/main");
+      if (s) { settings = Object.assign(settings, s); $("r-st").value = settings.stMax; $("r-ot").value = settings.otMax; $("r-break").value = settings.breakHrs; }
+      savedDays = await Store.days();
+      var mine = savedDays.find(function (d) { return d.date === day.date; });
+      if (mine && !day.crew.length) { day = JSON.parse(JSON.stringify(mine)); day.crew = day.crew || []; day.equipment = day.equipment || []; }
+      renderAll();
+      saveState(mine ? "Saved" : Store.mode() === "db" ? "Not saved yet" : "Saves in this browser only");
+      var t1 = await loadTemplate("signin"), t2 = await loadTemplate("lem");
+      if (t1 && !templates.signin) templates.signin = t1;
+      if (t2 && !templates.lem) templates.lem = t2;
+      renderLayout();
+    } catch (e) {
+      saveState("Couldn't load saved days.", true);
+    }
+  })();
 })();
 </script>
 </body>
