@@ -47,12 +47,13 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; }
 body {
   background: var(--bg); color: var(--ink);
   font-family: var(--body); font-size: 15px; line-height: 1.5;
 }
-.wrap { max-width: 1040px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 64px; display: grid; gap: 22px; }
+.wrap { max-width: 1320px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 64px; display: grid; gap: 22px; }
 header { display: grid; gap: 4px; }
 .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 h1 { font-family: var(--display); font-weight: 700; font-size: clamp(30px, 6vw, 42px); line-height: 1.05; margin: 0; text-wrap: balance; }
@@ -125,6 +126,37 @@ tr.st-idle .name { font-weight: 500; }
 .pill.warn { background: var(--warn-soft); color: var(--warn); }
 .pill.idle { background: var(--idle-soft); color: var(--idle); }
 .section-row td { background: var(--bg); font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding-block: 6px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { font: inherit; font-size: 14px; font-weight: 600; border: 0; background: transparent; color: var(--muted); padding: 7px 14px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.sheets { display: grid; grid-template-columns: minmax(0, 1fr); gap: 26px; }
+.sheet-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; }
+.xl tr.blank td { color: var(--muted); font-size: 12px; font-style: italic; background: var(--bg); }
+.sheet-panel h2 { font-family: var(--display); font-size: 22px; font-weight: 600; margin: 0; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.sheet-panel h2 small { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 400; }
+.tabname { font-family: var(--mono); font-size: 12px; color: var(--muted); padding-top: 4px; }
+.xl { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+.xl table { min-width: 0; font-size: 13px; }
+.xl th, .xl td { padding: 4px 8px; border: 1px solid var(--line); white-space: nowrap; }
+.xl thead th { text-transform: none; letter-spacing: 0; font-family: var(--body); font-size: 12px; color: var(--ink); }
+.xl thead .letters th { font-family: var(--mono); font-size: 10px; color: var(--muted); text-align: center; padding-block: 2px; font-weight: 400; }
+.xl .rn { font-family: var(--mono); font-size: 11px; color: var(--muted); background: var(--bg); text-align: right; width: 1%; }
+.xl td.n { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.xl td.check { font-size: 12px; border-left: 2px solid var(--line); }
+.xl th.check { border-left: 2px solid var(--line); }
+.xl tr.x-bad td:not(.rn) { background: var(--bad-soft); }
+.xl tr.x-warn td:not(.rn) { background: var(--warn-soft); }
+.xl tr.x-total td { font-weight: 600; background: var(--bg); }
+.xl tr.x-idle td:not(.rn) { color: var(--idle); }
+.xl td.hit { outline: 2px solid var(--bad); outline-offset: -2px; color: var(--bad); font-weight: 700; }
+.xl td.hit-warn { outline: 2px solid var(--accent); outline-offset: -2px; color: var(--warn); font-weight: 700; }
+.xl tr.flash td:not(.rn) { animation: flash 1.2s ease-out; }
+@keyframes flash { from { box-shadow: inset 0 0 0 999px var(--accent-soft); } to { box-shadow: none; } }
+.where { display: block; font-size: 12px; color: var(--muted); font-family: var(--mono); margin-top: 3px; }
+.where a { color: inherit; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); align-items: center; }
+.legend i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; }
 .foot { font-size: 13px; color: var(--muted); max-width: 70ch; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -165,6 +197,10 @@ tr.st-idle .name { font-weight: 500; }
       <div class="summary" id="summary"></div>
     </div>
     <div class="toolbar">
+      <div class="seg" role="group" aria-label="View">
+        <button type="button" id="view-sheets" aria-pressed="true">As the sheets</button>
+        <button type="button" id="view-people" aria-pressed="false">By person</button>
+      </div>
       <div class="btn-row">
         <label for="only-problems"><input type="checkbox" id="only-problems"> Show only problems</label>
         <label for="break">Deduct unpaid break from sign-in <input type="number" id="break" min="0" step="0.25" value="0"> hrs</label>
@@ -174,7 +210,18 @@ tr.st-idle .name { font-weight: 500; }
         <button class="btn" id="clear" type="button">Clear files</button>
       </div>
     </div>
-    <div class="table-wrap">
+    <div id="sheets-view" style="display:grid;gap:12px">
+      <div class="legend">
+        <span><i style="background:var(--bad-soft);outline:2px solid var(--bad);outline-offset:-2px"></i>Wrong cell / hours don't match</span>
+        <span><i style="background:var(--warn-soft);outline:2px solid var(--accent);outline-offset:-2px"></i>Name spelled differently</span>
+        <span>Last column shows what the other sheet says.</span>
+      </div>
+      <div class="sheets">
+        <div class="sheet-panel"><h2>Daily sign-in <small id="signin-file"></small></h2><div id="signin-grids"></div></div>
+        <div class="sheet-panel"><h2>LEM <small id="lem-file"></small></h2><div id="lem-grids" style="display:grid;gap:14px"></div></div>
+      </div>
+    </div>
+    <div class="table-wrap" id="people-view" hidden>
       <table>
         <thead>
           <tr>
@@ -286,29 +333,52 @@ var Logic = (function () {
     return (row || []).some(function (c) { return /^total\b/.test(low(c)); });
   }
 
-  function parseSignIn(rows, sheetName) {
+  // A copy of the part of the sheet we read, so the page can redraw it as it looks in Excel
+  function makeGrid(rows, origin, sheetName, h, lastRow, keyCols, timeCols) {
+    var header = rows[h.row] || [];
+    var data = [];
+    for (var r = h.row + 1; r <= lastRow; r++) data.push({ r: r, xr: r + origin.r + 1, cells: rows[r] || [] });
+    var cols = [];
+    var width = Math.max(header.length, data.reduce(function (m, d) { return Math.max(m, d.cells.length); }, 0));
+    for (var c = 0; c < width; c++) {
+      var key = keyCols.indexOf(c) >= 0;
+      var head = txt(header[c]);
+      var hasData = data.some(function (d) { return txt(d.cells[c]) !== ""; });
+      if (key || hasData || (head && /hours|total|time|shift/i.test(head))) cols.push(c);
+    }
+    return {
+      sheet: sheetName, nameCol: h.n, header: header, headerXr: h.row + origin.r + 1, data: data, cols: cols,
+      colLetter: function (c) { return XLSX.utils.encode_col(c + origin.c); },
+      timeCols: timeCols || []
+    };
+  }
+
+  function parseSignIn(rows, sheetName, origin) {
     var h = findHeader(rows, function (c) {
       var n = col(c, /name/), tin = col(c, /^time\s*in\b/), tout = col(c, /^time\s*out\b/);
       return n >= 0 && tin >= 0 && tout >= 0 ? { n: n, tin: tin, tout: tout, role: col(c, /position|id\s*#|class|title/) } : null;
     });
     if (!h) return null;
-    var people = [];
+    var people = [], lastRow = h.row;
     for (var r = h.row + 1; r < rows.length; r++) {
       var row = rows[r] || [];
       var name = txt(row[h.n]);
       if (!name) continue;
       if (/signature|^total/i.test(name)) break;
+      lastRow = r;
       var a = toHours(row[h.tin]), b = toHours(row[h.tout]);
       var hrs = null, issue = null;
       if (a != null && b != null) { hrs = b - a; if (hrs < 0) hrs += 24; }
       else if (a != null || b != null) issue = a == null ? "No time in" : "No time out";
       var role = h.role >= 0 ? txt(row[h.role]).replace(/^\d+\s*\/\s*/, "") : "";
-      people.push({ raw: name, nm: splitName(name), role: role, tin: a, tout: b, hours: hrs, issue: issue, sheet: sheetName });
+      people.push({ raw: name, nm: splitName(name), role: role, tin: a, tout: b, hours: hrs, issue: issue,
+        locs: [{ sheet: sheetName, r: r, xr: r + origin.r + 1, nameCol: h.n, hoursCols: [h.tin, h.tout] }] });
     }
-    return { people: people, date: findDate(rows) };
+    var grid = makeGrid(rows, origin, sheetName, h, lastRow, [h.n, h.tin, h.tout], [h.tin, h.tout]);
+    return { people: people, date: findDate(rows), grid: grid };
   }
 
-  function parseLem(rows, sheetName) {
+  function parseLem(rows, sheetName, origin) {
     var h = findHeader(rows, function (c) {
       var n = col(c, /^name$|^employee|^full name|^worker/);
       if (n < 0) return null;
@@ -318,13 +388,15 @@ var Logic = (function () {
       return { n: n, h: hc, st: col(c, /straight|^st\b|reg/), ot: col(c, /^o\.?\s?t\b|overtime/), dt: col(c, /double|^d\.?t\b/), role: col(c, /^class|position|trade/) };
     });
     if (!h) return null;
-    var people = [];
+    var people = [], lastRow = h.row;
     for (var r = h.row + 1; r < rows.length; r++) {
       var row = rows[r] || [];
-      if (isTotalRow(row)) break;
+      if (isTotalRow(row)) { lastRow = r; break; }
       var name = txt(row[h.n]);
       if (!name) continue;
-      var p = { raw: name, nm: splitName(name), role: h.role >= 0 ? txt(row[h.role]) : "", hours: toNum(row[h.h]), sheets: [sheetName] };
+      lastRow = r;
+      var p = { raw: name, nm: splitName(name), role: h.role >= 0 ? txt(row[h.role]) : "", hours: toNum(row[h.h]),
+        locs: [{ sheet: sheetName, r: r, xr: r + origin.r + 1, nameCol: h.n, hoursCols: [h.h] }] };
       if (h.st >= 0) p.st = toNum(row[h.st]);
       if (h.ot >= 0) p.ot = toNum(row[h.ot]);
       if (h.dt >= 0) p.dt = toNum(row[h.dt]);
@@ -332,24 +404,28 @@ var Logic = (function () {
       if (!p.hours && (p.st || p.ot || p.dt)) p.hours = (p.st || 0) + (p.ot || 0) + (p.dt || 0);
       people.push(p);
     }
-    return { people: people, date: findDate(rows) };
+    var grid = makeGrid(rows, origin, sheetName, h, lastRow, [h.n, h.h], []);
+    return { people: people, date: findDate(rows), grid: grid };
   }
 
   // Look at a workbook and decide which report it is
   function readWorkbook(wb) {
-    var signin = null, lem = { people: [], date: null, sheets: [] };
+    var signin = null, lem = { people: [], date: null, sheets: [], grids: [] };
     wb.SheetNames.forEach(function (sn) {
-      var rows = sheetRows(wb.Sheets[sn]);
-      var s = parseSignIn(rows, sn);
+      var ws = wb.Sheets[sn];
+      if (!ws["!ref"]) return;
+      var origin = XLSX.utils.decode_range(ws["!ref"]).s;
+      var rows = sheetRows(ws);
+      var s = parseSignIn(rows, sn, origin);
       if (s && s.people.length) {
-        if (!signin) signin = { people: [], date: s.date, sheets: [] };
-        signin.people = signin.people.concat(s.people); signin.sheets.push(sn);
+        if (!signin) signin = { people: [], date: s.date, sheets: [], grids: [] };
+        signin.people = signin.people.concat(s.people); signin.sheets.push(sn); signin.grids.push(s.grid);
         signin.date = signin.date || s.date;
         return;
       }
-      var l = parseLem(rows, sn);
+      var l = parseLem(rows, sn, origin);
       if (l && l.people.length) {
-        lem.people = lem.people.concat(l.people); lem.sheets.push(sn);
+        lem.people = lem.people.concat(l.people); lem.sheets.push(sn); lem.grids.push(l.grid);
         lem.date = lem.date || l.date;
       }
     });
@@ -361,7 +437,7 @@ var Logic = (function () {
         var k = p.nm.last + "|" + p.nm.first;
         if (byKey[k]) {
           var q = byKey[k];
-          q.hours += p.hours; q.sheets = q.sheets.concat(p.sheets);
+          q.hours += p.hours; q.locs = q.locs.concat(p.locs);
           ["st", "ot", "dt"].forEach(function (f) { if (p[f] != null) q[f] = (q[f] || 0) + p[f]; });
         } else { byKey[k] = p; merged.push(p); }
       });
@@ -453,7 +529,7 @@ var Logic = (function () {
     });
   }
 
-  return { readWorkbook: readWorkbook, match: match, evaluate: evaluate, toHours: toHours, splitName: splitName };
+  return { readWorkbook: readWorkbook, match: match, evaluate: evaluate, toHours: toHours, splitName: splitName, toDateStr: toDateStr };
 })();
 if (typeof module !== "undefined") module.exports = Logic;
 </script>
@@ -461,10 +537,12 @@ if (typeof module !== "undefined") module.exports = Logic;
 // ---------- UI ----------
 (function () {
   var state = { signin: null, lem: null, example: false };
+  var view = "sheets";
   var $ = function (id) { return document.getElementById(id); };
   var drop = $("drop"), input = $("file");
 
   try { var b = localStorage.getItem("lemcheck.break"); if (b != null) $("break").value = b; } catch (e) {}
+  try { var v = localStorage.getItem("lemcheck.view"); if (v === "people" || v === "sheets") view = v; } catch (e) {}
 
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function fmt(h) { return h == null ? "—" : (Math.round(h * 100) / 100).toString(); }
@@ -477,6 +555,16 @@ if (typeof module !== "undefined") module.exports = Logic;
     var cap = function (x) { return x.replace(/\b[a-z]/g, function (c) { return c.toUpperCase(); }); };
     return cap(p.nm.last) + (p.nm.first ? ", " + cap(p.nm.first) : "");
   }
+  function gridFor(data, sheet) {
+    for (var i = 0; i < data.grids.length; i++) if (data.grids[i].sheet === sheet) return { g: data.grids[i], i: i };
+    return null;
+  }
+  function ref(data, loc, cols) {
+    var gi = gridFor(data, loc.sheet);
+    var letters = cols.map(function (c) { return gi.g.colLetter(c) + loc.xr; });
+    return letters.join(", ");
+  }
+  function rowId(kind, data, loc) { return "x-" + kind + "-" + gridFor(data, loc.sheet).i + "-" + loc.r; }
 
   function notice(kind, html) {
     var d = document.createElement("div");
@@ -515,12 +603,34 @@ if (typeof module !== "undefined") module.exports = Logic;
   window.addEventListener("dragover", function (e) { e.preventDefault(); });
   window.addEventListener("drop", function (e) { e.preventDefault(); if (!drop.contains(e.target)) handleFiles(e.dataTransfer.files); });
 
+  function setView(v) {
+    view = v;
+    try { localStorage.setItem("lemcheck.view", v); } catch (e) {}
+    render();
+  }
+  $("view-sheets").addEventListener("click", function () { setView("sheets"); });
+  $("view-people").addEventListener("click", function () { setView("people"); });
   $("only-problems").addEventListener("change", render);
   $("break").addEventListener("input", function () {
     try { localStorage.setItem("lemcheck.break", $("break").value); } catch (e) {}
     render();
   });
   $("clear").addEventListener("click", function () { state = { signin: null, lem: null, example: false }; render(); });
+
+  // "Sign-in row 13" links in the person view jump to that row in the sheet view
+  $("rows").addEventListener("click", function (e) {
+    var a = e.target.closest("a[data-row]");
+    if (!a) return;
+    e.preventDefault();
+    var id = a.getAttribute("data-row");
+    $("only-problems").checked = false;
+    setView("sheets");
+    var tr = document.getElementById(id);
+    if (tr) {
+      tr.scrollIntoView({ block: "center", behavior: "smooth" });
+      tr.classList.remove("flash"); void tr.offsetWidth; tr.classList.add("flash");
+    }
+  });
 
   var lastProblems = [];
   $("copy").addEventListener("click", function () {
@@ -537,16 +647,115 @@ if (typeof module !== "undefined") module.exports = Logic;
     ta.remove();
   }
 
-  function slot(id, data, kindLabel) {
+  function slot(id, data) {
     var el = $(id);
     el.classList.toggle("loaded", !!data); el.classList.toggle("empty", !data);
     el.querySelector(".slot-file").textContent = data ? data.file : "Not loaded";
     var meta = "";
-    if (data) {
-      var counted = data.people.length;
-      meta = counted + " names" + (data.date ? " · " + data.date : "") + (data.sheets && data.sheets.length > 1 ? " · tabs: " + data.sheets.join(", ") : "");
-    }
+    if (data) meta = data.people.length + " names" + (data.date ? " · " + data.date : "") + (data.sheets && data.sheets.length > 1 ? " · tabs: " + data.sheets.join(", ") : "");
     el.querySelector(".slot-meta").textContent = meta;
+  }
+
+  // Work out, for every sheet row, how it should be marked and what the other sheet says
+  function buildMarks(res) {
+    var marks = {};
+    function mark(kind, data, loc, m) {
+      var key = kind + "|" + loc.sheet + "|" + loc.r;
+      marks[key] = m;
+    }
+    res.forEach(function (r) {
+      var s = r.pair.s, l = r.pair.l, nn = r.pair.nameNote;
+      if (s) {
+        var loc = s.locs[0], m = { status: r.status, hit: [], warn: [], check: "" };
+        if (nn) m.warn.push(loc.nameCol);
+        if (r.status === "bad") {
+          if (!l) { m.hit.push(loc.nameCol); m.check = "Not on LEM"; }
+          else {
+            m.hit = m.hit.concat(s.issue ? loc.hoursCols.filter(function (c, i) { return i === 0 ? s.tin == null : s.tout == null; }) : loc.hoursCols);
+            m.check = s.issue ? s.issue : "LEM says " + fmt(r.lemHrs);
+          }
+        } else if (r.status === "warn") m.check = "LEM: " + l.raw;
+        else if (r.status === "ok") m.check = "✓ LEM " + fmt(r.lemHrs);
+        else m.check = l ? "—" : "Not on LEM";
+        mark("signin", state.signin, loc, m);
+      }
+      if (l) {
+        l.locs.forEach(function (loc) {
+          var m = { status: r.status, hit: [], warn: [], check: "" };
+          if (nn) m.warn.push(loc.nameCol);
+          if (r.status === "bad") {
+            if (!s) { m.hit.push(loc.nameCol); m.check = "Not on sign-in"; }
+            else { m.hit = m.hit.concat(loc.hoursCols); m.check = s.issue ? "Sign-in: " + s.issue.toLowerCase() : "Sign-in says " + fmt(r.signHrs) + " (" + clock(s.tin) + "–" + clock(s.tout) + ")"; }
+          } else if (r.status === "warn") m.check = "Sign-in: " + s.raw;
+          else if (r.status === "ok") m.check = "✓ Sign-in " + fmt(r.signHrs);
+          else m.check = s ? "—" : "Not on sign-in";
+          if (l.locs.length > 1) m.check += " (total of " + l.locs.length + " tabs: " + fmt(r.lemHrs) + ")";
+          mark("lem", state.lem, loc, m);
+        });
+      }
+    });
+    return marks;
+  }
+
+  function cellText(v, c, g) {
+    if (v == null || v === "") return "";
+    if (g.timeCols.indexOf(c) >= 0) { var h = Logic.toHours(v); return h == null ? String(v) : clock(h); }
+    if (typeof v === "number") {
+      if (v > 20000 && /date/i.test(String(g.header[c] || ""))) return Logic.toDateStr(v) || v;
+      return String(Math.round(v * 100) / 100);
+    }
+    return String(v);
+  }
+
+  function renderGrid(kind, data, gi, marks, only) {
+    var g = data.grids[gi];
+    var extra = kind === "signin" ? ["Hrs", "LEM"] : ["Sign-in"];
+    var h = '<div class="xl"><table><thead><tr class="letters"><th></th>';
+    g.cols.forEach(function (c) { h += "<th>" + g.colLetter(c) + "</th>"; });
+    extra.forEach(function (x, i) { h += '<th class="' + (i === 0 ? "check" : "") + '"></th>'; });
+    h += '</tr><tr><th class="rn">' + g.headerXr + "</th>";
+    g.cols.forEach(function (c) { h += "<th>" + esc(String(g.header[c] == null ? "" : g.header[c]).trim()) + "</th>"; });
+    extra.forEach(function (x, i) { h += '<th class="' + (i === 0 ? "check" : "") + '">' + x + "</th>"; });
+    h += "</tr></thead><tbody>";
+    var shown = 0, blank = [];
+    var width = g.cols.length + 1 + extra.length;
+    function flushBlank() {
+      if (!blank.length) return;
+      if (!only) h += '<tr class="blank"><td class="rn">' + blank[0] + (blank.length > 1 ? "–" + blank[blank.length - 1] : "") + '</td><td colspan="' + (width - 1) + '">' + (blank.length > 1 ? blank.length + " empty rows" : "Empty row") + "</td></tr>";
+      blank = [];
+    }
+    g.data.forEach(function (d) {
+      var m = marks[kind + "|" + g.sheet + "|" + d.r];
+      var isTotal = d.cells.some(function (x) { return /^total\b/i.test(String(x == null ? "" : x).trim()); });
+      var empty = String(d.cells[g.nameCol] == null ? "" : d.cells[g.nameCol]).trim() === "";
+      if (only && !isTotal && (!m || m.status === "ok" || m.status === "idle")) return;
+      if (empty && !isTotal && !m) { blank.push(d.xr); return; }
+      flushBlank();
+      shown++;
+      var cls = isTotal ? "x-total" : m ? "x-" + m.status : "";
+      h += '<tr id="x-' + kind + "-" + gi + "-" + d.r + '" class="' + cls + '"><td class="rn">' + d.xr + "</td>";
+      g.cols.forEach(function (c) {
+        var v = d.cells[c], t = cellText(v, c, g);
+        var cc = [];
+        if (typeof v === "number" || g.timeCols.indexOf(c) >= 0) cc.push("n");
+        if (m && m.hit.indexOf(c) >= 0) cc.push("hit");
+        else if (m && m.warn.indexOf(c) >= 0) cc.push("hit-warn");
+        h += '<td class="' + cc.join(" ") + '" title="' + g.colLetter(c) + d.xr + '">' + esc(t) + "</td>";
+      });
+      if (kind === "signin") {
+        var p = m ? state.signin.people.find(function (x) { return x.locs[0].r === d.r && x.locs[0].sheet === g.sheet; }) : null;
+        var brk = parseFloat($("break").value) || 0;
+        var hrs = p && p.hours != null ? Math.max(0, p.hours - (p.hours > 0 ? brk : 0)) : null;
+        h += '<td class="n check">' + (p ? fmt(hrs) : "") + "</td>";
+        h += "<td>" + esc(m ? m.check : "") + "</td>";
+      } else {
+        h += '<td class="check">' + esc(m ? m.check : "") + "</td>";
+      }
+      h += "</tr>";
+    });
+    flushBlank();
+    if (!shown) h += '<tr><td colspan="' + width + '">No problems on this tab.</td></tr>';
+    return h + "</tbody></table></div>";
   }
 
   function render() {
@@ -583,16 +792,46 @@ if (typeof module !== "undefined") module.exports = Logic;
       '<div class="chip"><b>' + c.idle + '</b><span>not working today</span></div>' +
       '<div class="chip totals"><b>' + fmt(tS) + ' / ' + fmt(tL) + '</b><span>total hrs sign-in / LEM</span></div>';
 
+    $("view-sheets").setAttribute("aria-pressed", view === "sheets");
+    $("view-people").setAttribute("aria-pressed", view === "people");
+    $("sheets-view").hidden = view !== "sheets";
+    $("people-view").hidden = view !== "people";
+
     var only = $("only-problems").checked;
+    var marks = buildMarks(res);
+
+    // Sheet view
+    $("signin-file").textContent = state.signin.file || "";
+    $("lem-file").textContent = state.lem.file || "";
+    $("signin-grids").innerHTML = state.signin.grids.map(function (g, i) {
+      return (state.signin.grids.length > 1 ? '<div class="tabname">Tab: ' + esc(g.sheet) + "</div>" : "") + renderGrid("signin", state.signin, i, marks, only);
+    }).join("");
+    $("lem-grids").innerHTML = state.lem.grids.map(function (g, i) {
+      return '<div style="display:grid;gap:4px"><div class="tabname">Tab: ' + esc(g.sheet) + "</div>" + renderGrid("lem", state.lem, i, marks, only) + "</div>";
+    }).join("");
+
+    // Person view + copyable list
     var html = "", lastGroup = null;
     lastProblems = [];
     res.forEach(function (r) {
       var s = r.pair.s, l = r.pair.l, p = s || l;
       var label = niceName(p);
+      var whereTxt = [], whereHtml = [];
+      if (s) {
+        var sc = r.status === "bad" && l ? s.locs[0].hoursCols : [s.locs[0].nameCol];
+        whereTxt.push("Sign-in " + ref(state.signin, s.locs[0], sc));
+        whereHtml.push('<a href="#" data-row="' + rowId("signin", state.signin, s.locs[0]) + '">Sign-in row ' + s.locs[0].xr + "</a>");
+      }
+      if (l) l.locs.forEach(function (loc) {
+        var lc = r.status === "bad" && s ? loc.hoursCols : [loc.nameCol];
+        whereTxt.push("LEM “" + loc.sheet.trim() + "” " + ref(state.lem, loc, lc));
+        whereHtml.push('<a href="#" data-row="' + rowId("lem", state.lem, loc) + '">LEM ' + esc(ref(state.lem, loc, lc)) + "</a>");
+      });
       if (r.status === "bad" || r.status === "warn") {
         var line = label + ": " + r.label;
-        if (r.status === "bad" && (s || l)) line += " (sign-in " + fmt(r.signHrs) + " h, LEM " + fmt(r.lemHrs) + " h)";
+        if (r.status === "bad") line += " (sign-in " + fmt(r.signHrs) + " h, LEM " + fmt(r.lemHrs) + " h)";
         if (r.pair.nameNote) line += " [LEM spells it \"" + l.raw + "\"]";
+        line += " → " + whereTxt.join("; ");
         lastProblems.push(line);
       }
       if (only && (r.status === "ok" || r.status === "idle")) return;
@@ -610,41 +849,61 @@ if (typeof module !== "undefined") module.exports = Logic;
       if (l && (l.ot || l.dt)) lemCell += '<span class="sub">' + fmt(l.st || 0) + " ST · " + fmt(l.ot || 0) + " OT · " + fmt(l.dt || 0) + " DT</span>";
       else if (!l) lemCell += '<span class="sub">not listed</span>';
       var diff = r.diff == null || Math.abs(r.diff) < 0.01 ? "—" : (r.diff > 0 ? "+" : "") + fmt(r.diff);
-      var pill = { ok: "ok", bad: "bad", warn: "warn", idle: "idle" }[r.status];
       html += '<tr class="st-' + r.status + '">' +
         "<td>" + nameCell + "</td>" +
         '<td class="num">' + inout + "</td>" +
         '<td class="num">' + (s ? fmt(r.signHrs) : "—") + "</td>" +
         '<td class="num">' + lemCell + "</td>" +
         '<td class="num' + (r.status === "bad" ? " diff-bad" : "") + '">' + diff + "</td>" +
-        '<td><span class="pill ' + pill + '">' + esc(r.label) + "</span></td></tr>";
+        '<td><span class="pill ' + r.status + '">' + esc(r.label) + "</span>" +
+        (r.status === "bad" || r.status === "warn" ? '<span class="where">' + whereHtml.join(" · ") + "</span>" : "") + "</td></tr>";
     });
     if (!html) html = '<tr><td colspan="6">No problems. Untick "Show only problems" to see everyone.</td></tr>';
     $("rows").innerHTML = html;
   }
 
-  // Opening state: a made-up example so the page shows what it does
-  function P(raw, extra) { var o = { raw: raw, nm: Logic.splitName(raw) }; for (var k in extra) o[k] = extra[k]; return o; }
+  // Opening state: made-up example workbooks, run through the same reader as real files
+  function book(sheets) {
+    var wb = XLSX.utils.book_new();
+    sheets.forEach(function (s) { XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s[1]), s[0]); });
+    return Logic.readWorkbook(wb).data;
+  }
+  var H = function (h) { return h / 24; };
   state.example = true;
-  state.signin = { file: "Example sign-in.xlsx", date: "2026-10-06", people: [
-    P("Hale, Marcus", { role: "Superintendent", tin: 5.5, tout: 17.5, hours: 12 }),
-    P("Okafor, Grace", { role: "Project Coordinator", tin: 6, tout: 14, hours: 8 }),
-    P("Brandt, Lukas", { role: "H&S Manager", tin: 8, tout: 14, hours: 6 }),
-    P("Pellerin, Andre", { role: "Foreman", tin: 6, tout: 18, hours: 12 }),
-    P("Whitford, Samuel", { role: "Labourer", tin: 6, tout: 18, hours: 12 }),
-    P("Nakamura, Ken", { role: "Operator", tin: 6, tout: null, hours: null, issue: "No time out" }),
-    P("Ruiz, Daniela", { role: "Labourer", tin: null, tout: null, hours: null })
-  ]};
-  state.lem = { file: "Example LEM.xlsx", date: "2026-10-06", people: [
-    P("Hale, Marcus", { role: "Superintendent", hours: 12 }),
-    P("Okafor, Grace", { role: "Project Coordinator", hours: 8 }),
-    P("Brandt, Lukas", { role: "HSE Manager", hours: 8 }),
-    P("Pellerin, Andre", { role: "Foreman", hours: 12, st: 8, ot: 3, dt: 1 }),
-    P("Whitferd, Sam", { role: "Labourer", hours: 12, st: 8, ot: 3, dt: 1 }),
-    P("Nakamura, Ken", { role: "Operator", hours: 10, st: 8, ot: 2, dt: 0 }),
-    P("Ruiz, Daniela", { role: "Labourer", hours: 0 }),
-    P("Fontaine, Theo", { role: "Labourer", hours: 4, st: 4, ot: 0, dt: 0 })
-  ]};
+  state.signin = book([["Sign in Sheet", [
+    [null, null, null, null, null, null, null, "Date:", 46301],
+    [],
+    [null, "Full Name (PRINT)", "ID #/Position", null, "Time In", "Signature", "Time Out", "Signature", "Activity ID"],
+    [1, "Hale, Marcus", "100201/Superintendent", null, H(5.5), null, H(17.5), null, "Maintenance"],
+    [2, "Okafor, Grace", "100202/Project Coordinator", null, H(6), null, H(14), null, "Maintenance"],
+    [3, "Brandt, Lukas", "100203/H&S Manager", null, H(8), null, H(14), null, "Maintenance"],
+    [4, "Pellerin, Andre", "100204/Foreman", null, H(6), null, H(18), null, "Maintenance"],
+    [5, "Whitford, Samuel", "100205/Labourer", null, H(6), null, H(18), null, "Maintenance"],
+    [6, "Nakamura, Ken", "100206/Operator", null, H(6), null, null, null, "Maintenance"],
+    [7, "Ruiz, Daniela", "100207/Labourer"]
+  ]]]);
+  state.signin.file = "Example sign-in.xlsx";
+  state.lem = book([
+    ["Labour STAFF", [
+      [null, null, null, null, null, null, null, null, "Date:", 46301],
+      [],
+      ["No.", "Name", "Class", "Hours"],
+      [1, "Hale, Marcus", "Superintendent", 12],
+      [2, "Okafor, Grace", "Project Coordinator", 8],
+      [3, "Brandt, Lukas", "HSE Manager", 8],
+      ["TOTAL INDIRECT", null, null, 28]
+    ]],
+    ["Labour TRADES", [
+      ["No.", "Employee", "Class", "Straight Time Hrs", "O.T Hours", "Double Time Hours", "Total"],
+      [1, "Pellerin, Andre", "Foreman", 8, 3, 1, 12],
+      [2, "Whitferd, Sam", "Labourer", 8, 3, 1, 12],
+      [3, "Nakamura, Ken", "Operator", 8, 2, 0, 10],
+      [4, "Ruiz, Daniela", "Labourer", null, null, null, 0],
+      [5, "Fontaine, Theo", "Labourer", 4, 0, 0, 4],
+      ["TOTAL DIRECT", null, null, 28, 8, 2, 38]
+    ]]
+  ]);
+  state.lem.file = "Example LEM.xlsx";
   render();
 })();
 </script>
