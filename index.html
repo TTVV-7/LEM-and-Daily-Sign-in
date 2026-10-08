@@ -164,6 +164,12 @@ tr.st-idle .name { font-weight: 500; }
 .fill { display: grid; gap: 16px; }
 .daybar { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; }
 .date-quick { display: flex; gap: 6px; }
+.stat-box { display: flex; align-items: center; gap: 6px; font-size: 14px; padding-bottom: 8px; cursor: pointer; }
+.lem-for { font-family: var(--display); font-size: 22px; font-weight: 600; line-height: 1.2; }
+.lem-for .rate { display: inline-block; font-family: var(--body); font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--muted); vertical-align: middle; margin-left: 8px; }
+.lem-for .rate.hot { border-color: var(--accent); color: var(--ink); }
+.rules-body { flex-direction: column; }
+.rules-line b { color: var(--ink); font-weight: 600; margin-right: 4px; }
 .date-quick .btn { padding: 7px 10px; }
 .field { display: grid; gap: 4px; font-size: 12px; color: var(--muted); font-family: var(--mono); letter-spacing: .06em; text-transform: uppercase; }
 .field input, .field select { font: inherit; font-family: var(--body); font-size: 15px; letter-spacing: 0; text-transform: none; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; }
@@ -251,8 +257,10 @@ tr.st-idle .name { font-weight: 500; }
       <div class="date-quick"><button class="btn" type="button" id="date-yday">Yesterday</button><button class="btn" type="button" id="date-today">Today</button></div>
       <label class="field" for="f-shift"><span>Shift</span>
         <select id="f-shift"><option value="D">Day (D)</option><option value="N">Night (N)</option></select></label>
+      <label class="stat-box" for="f-stat"><input type="checkbox" id="f-stat"> Stat holiday</label>
       <div class="save-state" id="save-state" aria-live="polite"></div>
     </div>
+    <div class="lem-for" id="lem-for" aria-live="polite"></div>
 
     <div class="start" id="start">
       <div class="start-copy">
@@ -312,8 +320,9 @@ tr.st-idle .name { font-weight: 500; }
     <details class="rules" id="rules">
       <summary>Hours rules</summary>
       <div class="rules-body">
-        <label for="r-st">Straight time up to <input type="number" id="r-st" min="0" step="0.5" value="8"> hrs</label>
-        <label for="r-ot">Overtime up to <input type="number" id="r-ot" min="0" step="0.5" value="11"> hrs, double time after</label>
+        <div class="rules-line"><b>Weekdays</b> <label for="r-st">straight time up to <input type="number" id="r-st" min="0" step="0.5" value="8"> hrs,</label> <label for="r-ot">overtime up to <input type="number" id="r-ot" min="0" step="0.5" value="11"> hrs, double time after</label></div>
+        <div class="rules-line"><b>Saturdays</b> <label for="r-sat">overtime up to <input type="number" id="r-sat" min="0" step="0.5" value="11"> hrs, double time after</label></div>
+        <div class="rules-line"><b>Sundays and stat holidays</b> all double time. Tick “Stat holiday” beside the date for a stat.</div>
         <label for="r-break">Unpaid break taken off LEM hours <input type="number" id="r-break" min="0" step="0.25" value="0"> hrs</label>
       </div>
     </details>
@@ -846,7 +855,15 @@ var Builder = (function () {
     return Math.round(h * 100) / 100;
   }
   function toMin(t) { var m = /^(\d{1,2}):(\d{2})/.exec(t || ""); return m ? +m[1] * 60 + +m[2] : null; }
-  function split(h, rule) {
+  // Weekday: ST, then OT, then DT. Saturday: OT up to satOt, DT after. Sunday and stat holidays: all DT.
+  function dayKind(day) {
+    if (day.stat) return "stat";
+    var p = (day.date || "").split("-"), wd = p.length === 3 ? new Date(+p[0], +p[1] - 1, +p[2]).getDay() : -1;
+    return wd === 0 ? "sun" : wd === 6 ? "sat" : "week";
+  }
+  function split(h, rule, kind) {
+    if (kind === "sun" || kind === "stat") return { st: 0, ot: 0, dt: r2(h) };
+    if (kind === "sat") { var so = rule.satOt == null ? 11 : rule.satOt; return { st: 0, ot: r2(Math.min(h, so)), dt: r2(Math.max(h - so, 0)) }; }
     var stMax = rule.stMax, otMax = rule.otMax;
     var st = Math.min(h, stMax), ot = Math.min(Math.max(h - stMax, 0), Math.max(otMax - stMax, 0)), dt = Math.max(h - Math.max(otMax, stMax), 0);
     return { st: r2(st), ot: r2(ot), dt: r2(dt) };
@@ -952,7 +969,7 @@ var Builder = (function () {
         var p = assign[r];
         [t.n, t.role, t.st, t.ot, t.dt, t.delay, t.cwp, t.cost, t.sub].forEach(function (c) { put(ws2, r, c, null); });
         if (!p) { putResult(ws2, r, t.tot, 0); return; }
-        var hrs = hoursOf(p, brk), sp = split(hrs, settings);
+        var hrs = hoursOf(p, brk), sp = split(hrs, settings, dayKind(day));
         put(ws2, r, t.n, p.name); put(ws2, r, t.role, p.lemClass || p.position); put(ws2, r, t.sub, p.sub);
         if (t.shift > 0) put(ws2, r, t.shift, p.shift === "Night" ? "Night Shift" : "Day Shift");
         if (hrs) {
@@ -1079,7 +1096,7 @@ var Builder = (function () {
     return { buffer: buf, name: name };
   }
 
-  return { build: build, hoursOf: hoursOf, split: split, toMin: toMin };
+  return { build: build, hoursOf: hoursOf, split: split, toMin: toMin, dayKind: dayKind };
 })();
 
 
@@ -1565,7 +1582,7 @@ var Store = (function () {
   var uid = Importer.uid;
 
   var day = { date: daysAgo(1), shift: "D", crew: [], equipment: [] };
-  var settings = { stMax: 8, otMax: 11, breakHrs: 0 };
+  var settings = { stMax: 8, otMax: 11, satOt: 11, breakHrs: 0 };
   var templates = { signin: null, lem: null };   // {name, bytes}
   var savedDays = [];
   var ticked = {};
@@ -1756,8 +1773,15 @@ var Store = (function () {
     var hc = tr.querySelector('[data-c="hrs"]'), sc = tr.querySelector('[data-c="split"]');
     hc.textContent = partial ? (p.tin ? "no out" : "no in") : h ? fmt(lh) : "off";
     hc.className = "hv" + (h ? "" : " off");
-    if (p.tab === "trades" && lh) { var s = Builder.split(lh, settings); sc.textContent = fmt(s.st) + " · " + fmt(s.ot) + " · " + fmt(s.dt); }
+    if (p.tab === "trades" && lh) { var s = Builder.split(lh, settings, Builder.dayKind(day)); sc.textContent = fmt(s.st) + " · " + fmt(s.ot) + " · " + fmt(s.dt); }
     else sc.textContent = "";
+  }
+  // People with hours go to the top; order within each group is kept.
+  // Done when a day is opened, copied or imported, not on each +/- click, so rows don't jump under the mouse.
+  function sortWorkingFirst() {
+    var on = [], off = [];
+    day.crew.forEach(function (p) { (p.tin || p.tout ? on : off).push(p); });
+    day.crew = on.concat(off);
   }
   function renderCrew() {
     var tb = $("crew-rows");
@@ -1829,7 +1853,7 @@ var Store = (function () {
   });
   $("bulk-apply").addEventListener("click", function () {
     var a = $("bulk-in").value, b = $("bulk-out").value;
-    tickedList().forEach(function (p) { p.tin = a; p.tout = b; }); renderCrew(); scheduleSave();
+    tickedList().forEach(function (p) { p.tin = a; p.tout = b; }); sortWorkingFirst(); renderCrew(); scheduleSave();
   });
   $("bulk-clear").addEventListener("click", function () {
     tickedList().forEach(function (p) { p.tin = ""; p.tout = ""; }); renderCrew(); scheduleSave();
@@ -1897,7 +1921,7 @@ var Store = (function () {
       day.crew = day.crew || []; day.equipment = day.equipment || [];
       fillNotice("ok", "Opened the saved " + niceDate(v) + ".");
     } else {
-      day.date = v;
+      day.date = v; day.stat = false;
       scheduleSave();
     }
     undoDay = null; $("undo-btn").hidden = true; ticked = {};
@@ -1908,7 +1932,7 @@ var Store = (function () {
   $("date-yday").addEventListener("click", function () { pickDate(daysAgo(1)); });
   $("date-today").addEventListener("click", function () { pickDate(daysAgo(0)); });
   $("f-shift").addEventListener("change", function () { day.shift = this.value; scheduleSave(); });
-  [["r-st", "stMax"], ["r-ot", "otMax"], ["r-break", "breakHrs"]].forEach(function (pair) {
+  [["r-st", "stMax"], ["r-ot", "otMax"], ["r-sat", "satOt"], ["r-break", "breakHrs"]].forEach(function (pair) {
     $(pair[0]).addEventListener("input", function () {
       var v = parseFloat(this.value); settings[pair[1]] = isNaN(v) ? 0 : v;
       Array.prototype.forEach.call($("crew-rows").rows, function (tr) { var p = findP(tr); if (p) updateCalc(tr, p); });
@@ -1962,8 +1986,16 @@ var Store = (function () {
   $("dl-lem").addEventListener("click", function () { generate(["lem"]); });
   $("dl-both").addEventListener("click", function () { generate(["signin", "lem"]); });
 
+  var RATE = { week: "Weekday rates", sat: "Saturday · OT then DT", sun: "Sunday · all double time", stat: "Stat holiday · all double time" };
+  function renderLemFor() {
+    var p = day.date.split("-"), d = new Date(+p[0], +p[1] - 1, +p[2]), k = Builder.dayKind(day);
+    $("lem-for").innerHTML = "Making LEMs for " + esc(d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })) +
+      '<span class="rate' + (k === "week" ? "" : " hot") + '">' + RATE[k] + "</span>";
+    $("f-stat").checked = !!day.stat;
+  }
+  $("f-stat").addEventListener("change", function () { day.stat = this.checked; renderLemFor(); renderCrew(); scheduleSave(); });
   function renderAll() {
-    $("f-date").value = day.date; $("f-shift").value = day.shift || "D";
+    $("f-date").value = day.date; $("f-shift").value = day.shift || "D"; renderLemFor(); sortWorkingFirst();
     renderCrew(); renderEquip(); renderCopyFrom(); renderSummary();
   }
 
@@ -1974,7 +2006,7 @@ var Store = (function () {
   (async function () {
     try {
       var s = await Store.get("settings/main");
-      if (s) { settings = Object.assign(settings, s); $("r-st").value = settings.stMax; $("r-ot").value = settings.otMax; $("r-break").value = settings.breakHrs; }
+      if (s) { settings = Object.assign(settings, s); $("r-st").value = settings.stMax; $("r-ot").value = settings.otMax; $("r-sat").value = settings.satOt; $("r-break").value = settings.breakHrs; }
       savedDays = await Store.days();
       var mine = savedDays.find(function (d) { return d.date === day.date; });
       if (mine && !day.crew.length) { day = JSON.parse(JSON.stringify(mine)); day.crew = day.crew || []; day.equipment = day.equipment || []; }
