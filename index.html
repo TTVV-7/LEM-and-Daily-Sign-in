@@ -163,6 +163,8 @@ tr.st-idle .name { font-weight: 500; }
 .tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .fill { display: grid; gap: 16px; }
 .daybar { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; }
+.date-quick { display: flex; gap: 6px; }
+.date-quick .btn { padding: 7px 10px; }
 .field { display: grid; gap: 4px; font-size: 12px; color: var(--muted); font-family: var(--mono); letter-spacing: .06em; text-transform: uppercase; }
 .field input, .field select { font: inherit; font-family: var(--body); font-size: 15px; letter-spacing: 0; text-transform: none; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; }
 .save-state { font-size: 13px; color: var(--muted); padding-bottom: 8px; }
@@ -246,6 +248,7 @@ tr.st-idle .name { font-weight: 500; }
   <section id="tab-fill" class="fill">
     <div class="daybar">
       <label class="field" for="f-date"><span>Date</span><input type="date" id="f-date"></label>
+      <div class="date-quick"><button class="btn" type="button" id="date-yday">Yesterday</button><button class="btn" type="button" id="date-today">Today</button></div>
       <label class="field" for="f-shift"><span>Shift</span>
         <select id="f-shift"><option value="D">Day (D)</option><option value="N">Night (N)</option></select></label>
       <div class="save-state" id="save-state" aria-live="polite"></div>
@@ -1550,7 +1553,9 @@ var Store = (function () {
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
-  function todayIso() { var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  // Most LEMs are done the morning after, so the form opens on yesterday
+  function isoOf(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function daysAgo(n) { var d = new Date(); d.setDate(d.getDate() - n); return isoOf(d); }
   function niceDate(iso) {
     if (!iso) return "";
     var p = iso.split("-"), d = new Date(+p[0], +p[1] - 1, +p[2]);
@@ -1559,7 +1564,7 @@ var Store = (function () {
   function fmt(h) { return (Math.round(h * 100) / 100).toString(); }
   var uid = Importer.uid;
 
-  var day = { date: todayIso(), shift: "D", crew: [], equipment: [] };
+  var day = { date: daysAgo(1), shift: "D", crew: [], equipment: [] };
   var settings = { stMax: 8, otMax: 11, breakHrs: 0 };
   var templates = { signin: null, lem: null };   // {name, bytes}
   var savedDays = [];
@@ -1649,7 +1654,7 @@ var Store = (function () {
     sel.hidden = !has; $("copy-btn").hidden = !has;
     $("copy-title").textContent = has ? "Start from a saved day" : "No saved days yet";
     $("copy-hint").textContent = has ? "Copies everyone, their times and the equipment. Then change what's different today."
-      : "Each day you fill in here is saved. Tomorrow you can copy it and just change what's different. To start, drop yesterday's files or add people below.";
+      : "Each day you fill in here is saved. Tomorrow you can copy it and just change what's different. To start, drop the last files you sent or add people below. The date starts on yesterday, since most LEMs are for the day before.";
   }
   $("copy-btn").addEventListener("click", function () {
     var src = savedDays.find(function (d) { return d.date === $("copy-from").value; });
@@ -1899,6 +1904,9 @@ var Store = (function () {
     $("f-shift").value = day.shift || "D";
     renderAll();
   });
+  function pickDate(v) { var el = $("f-date"); if (el.value === v) return; el.value = v; el.dispatchEvent(new Event("change")); }
+  $("date-yday").addEventListener("click", function () { pickDate(daysAgo(1)); });
+  $("date-today").addEventListener("click", function () { pickDate(daysAgo(0)); });
   $("f-shift").addEventListener("change", function () { day.shift = this.value; scheduleSave(); });
   [["r-st", "stMax"], ["r-ot", "otMax"], ["r-break", "breakHrs"]].forEach(function (pair) {
     $(pair[0]).addEventListener("input", function () {
