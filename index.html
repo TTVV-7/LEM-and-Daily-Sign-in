@@ -1799,6 +1799,7 @@ var Store = (function () {
     if (!p || !f) return;
     if (f === "position" && (!p.lemClass || p.lemClass === p.position)) { p.lemClass = t.value; tr.querySelector('[data-f="lemClass"]').value = t.value; }
     p[f] = t.value;
+    if (f === "tin" || f === "tout" || f === "tab") { var had = p.cost; defaultCode(p); if (p.cost !== had) tr.querySelector('[data-f="cost"]').value = p.cost; }
     updateCalc(tr, p); renderSummary(); scheduleSave();
   });
   $("crew-rows").addEventListener("change", function (e) {
@@ -1813,7 +1814,7 @@ var Store = (function () {
     var tr = b.closest("tr"), p = findP(tr), i = day.crew.indexOf(p), act = b.getAttribute("data-act");
     if (act === "del") { day.crew.splice(i, 1); delete ticked[p.id]; }
     if (act === "plus" || act === "minus") nudgeHours(p, act === "plus" ? 1 : -1);
-    if (act === "zero") { p.tin = ""; p.tout = ""; }
+    if (act === "zero") clearHours(p);
     if (act === "up" && i > 0) { day.crew.splice(i, 1); day.crew.splice(i - 1, 0, p); }
     if (act === "down" && i < day.crew.length - 1) { day.crew.splice(i, 1); day.crew.splice(i + 1, 0, p); }
     renderCrew(); scheduleSave();
@@ -1822,22 +1823,27 @@ var Store = (function () {
   });
   // +/- one hour: moves time out, keeping time in. Starts from the bulk "In" time when the row is blank.
   function addMin(t, m) { var x = ((Builder.toMin(t) + m) % 1440 + 1440) % 1440; return String(Math.floor(x / 60)).padStart(2, "0") + ":" + String(x % 60).padStart(2, "0"); }
+  // Trades default to the Maintenance cost code; taking someone's hours away clears their code
+  var DEFAULT_TRADES_CODE = "Maintenance";
+  function defaultCode(p) { if (p.tab === "trades" && !p.cost && hoursOf(p)) p.cost = DEFAULT_TRADES_CODE; }
+  function clearHours(p) { p.tin = ""; p.tout = ""; p.cost = ""; }
   function nudgeHours(p, step) {
     if (!p.tin && !p.tout) { if (step < 0) return; p.tin = $("bulk-in").value || "06:00"; p.tout = p.tin; }
     else if (!p.tin) p.tin = p.tout;
     else if (!p.tout) p.tout = p.tin;
     var h = Math.min(hoursOf(p) + step, 23);
-    if (h <= 0) { p.tin = ""; p.tout = ""; return; }
+    if (h <= 0) { clearHours(p); return; }
     p.tout = addMin(p.tin, Math.round(h * 60));
+    defaultCode(p);
   }
   $("add-person").addEventListener("click", function () {
     var last = day.crew[day.crew.length - 1] || {};
-    var p = { id: uid(), name: "", empId: "", position: "", tab: last.tab || "trades", lemClass: "", shift: "Day", tin: "", tout: "", activity: last.activity || "", cwp: last.cwp || "", cost: last.cost || "", sub: "", lemOrder: null };
+    var p = { id: uid(), name: "", empId: "", position: "", tab: last.tab || "trades", lemClass: "", shift: "Day", tin: "", tout: "", activity: last.activity || "", cwp: last.cwp || "", cost: "", sub: "", lemOrder: null };
     day.crew.push(p); renderCrew(); scheduleSave();
     var inp = document.querySelector('#crew-rows tr[data-id="' + p.id + '"] [data-f="name"]'); if (inp) inp.focus();
   });
   $("clear-times").addEventListener("click", function () {
-    day.crew.forEach(function (p) { p.tin = ""; p.tout = ""; }); renderCrew(); scheduleSave();
+    day.crew.forEach(clearHours); renderCrew(); scheduleSave();
   });
 
   // ----- bulk actions on ticked rows -----
@@ -1853,10 +1859,10 @@ var Store = (function () {
   });
   $("bulk-apply").addEventListener("click", function () {
     var a = $("bulk-in").value, b = $("bulk-out").value;
-    tickedList().forEach(function (p) { p.tin = a; p.tout = b; }); sortWorkingFirst(); renderCrew(); scheduleSave();
+    tickedList().forEach(function (p) { p.tin = a; p.tout = b; if (a && b) defaultCode(p); else p.cost = ""; }); sortWorkingFirst(); renderCrew(); scheduleSave();
   });
   $("bulk-clear").addEventListener("click", function () {
-    tickedList().forEach(function (p) { p.tin = ""; p.tout = ""; }); renderCrew(); scheduleSave();
+    tickedList().forEach(clearHours); renderCrew(); scheduleSave();
   });
   $("bulk-remove").addEventListener("click", function () {
     day.crew = day.crew.filter(function (p) { return !ticked[p.id]; }); ticked = {}; renderCrew(); scheduleSave();

@@ -13,6 +13,7 @@ A single-page tool for the daily Workforce Report (sign-in sheet) and LEM Report
   - Weekdays: 8 ST, OT to 11, DT after.
   - Saturdays: OT up to 11, DT after (a 12-hour day is 11 OT + 1 DT).
   - Sundays and stat holidays: all DT. Tick "Stat holiday" beside the date for a stat.
+- Trades get the cost code "Maintenance" as soon as they have hours (you can type a different code). Taking someone's hours away (0, − down to zero, Clear times) also clears their cost code.
 - The date you're making LEMs for is shown in large text under the date, with the rates that apply that day.
 - People with hours are sorted to the top of the crew list when a day is opened, copied or imported, or times are set for ticked people.
 
