@@ -204,6 +204,10 @@ tr.st-idle .name { font-weight: 500; }
 .form-table tr.off input, .form-table tr.off select { color: var(--muted); }
 .form-table tr.bad td { background: var(--bad-soft); }
 .row-tools { white-space: nowrap; display: flex; gap: 2px; }
+.hrs-tools { display: flex; align-items: center; justify-content: flex-end; gap: 2px; white-space: nowrap; }
+.hrs-tools .hv { min-width: 3.2em; text-align: right; }
+.hrs-tools .hv.off { color: var(--idle); }
+.hrs-tools .icon { padding: 2px 5px; font-family: var(--mono); }
 .icon { font: inherit; font-size: 13px; border: 1px solid transparent; background: none; color: var(--muted); border-radius: 4px; padding: 2px 6px; cursor: pointer; }
 .icon:hover { border-color: var(--line); color: var(--ink); }
 .icon:focus-visible { outline: 2px solid var(--accent); }
@@ -1735,7 +1739,7 @@ var Store = (function () {
       '<td><select data-f="shift" aria-label="Shift">' + opt("Day", "Day", p.shift) + opt("Night", "Night", p.shift) + "</select></td>" +
       '<td><input type="time" data-f="tin" value="' + esc(p.tin) + '" aria-label="Time in"></td>' +
       '<td><input type="time" data-f="tout" value="' + esc(p.tout) + '" aria-label="Time out"></td>' +
-      '<td class="calc" data-c="hrs"></td><td class="calc" data-c="split"></td>' +
+      '<td class="calc"><div class="hrs-tools"><button type="button" class="icon" data-act="minus" aria-label="One hour less for ' + esc(p.name) + '" title="One hour less">−</button><span class="hv" data-c="hrs"></span><button type="button" class="icon" data-act="plus" aria-label="One hour more for ' + esc(p.name) + '" title="One hour more">+</button><button type="button" class="icon" data-act="zero" aria-label="Set ' + esc(p.name) + ' to zero hours" title="Zero hours">0</button></div></td><td class="calc" data-c="split"></td>' +
       '<td><input class="w-act" data-f="activity" value="' + esc(p.activity) + '" aria-label="Activity ID"></td>' +
       '<td><input class="w-cwp" data-f="cwp" value="' + esc(p.cwp) + '" aria-label="CWP description"></td>' +
       '<td><input class="w-cost" data-f="cost" value="' + esc(p.cost) + '" aria-label="Cost code"></td>' +
@@ -1746,7 +1750,7 @@ var Store = (function () {
     tr.className = partial ? "bad" : h ? "" : "off";
     var hc = tr.querySelector('[data-c="hrs"]'), sc = tr.querySelector('[data-c="split"]');
     hc.textContent = partial ? (p.tin ? "no out" : "no in") : h ? fmt(lh) : "off";
-    hc.className = "calc" + (h ? "" : " off");
+    hc.className = "hv" + (h ? "" : " off");
     if (p.tab === "trades" && lh) { var s = Builder.split(lh, settings); sc.textContent = fmt(s.st) + " · " + fmt(s.ot) + " · " + fmt(s.dt); }
     else sc.textContent = "";
   }
@@ -1779,12 +1783,24 @@ var Store = (function () {
     var b = e.target.closest("button[data-act]"); if (!b) return;
     var tr = b.closest("tr"), p = findP(tr), i = day.crew.indexOf(p), act = b.getAttribute("data-act");
     if (act === "del") { day.crew.splice(i, 1); delete ticked[p.id]; }
+    if (act === "plus" || act === "minus") nudgeHours(p, act === "plus" ? 1 : -1);
+    if (act === "zero") { p.tin = ""; p.tout = ""; }
     if (act === "up" && i > 0) { day.crew.splice(i, 1); day.crew.splice(i - 1, 0, p); }
     if (act === "down" && i < day.crew.length - 1) { day.crew.splice(i, 1); day.crew.splice(i + 1, 0, p); }
     renderCrew(); scheduleSave();
     var again = document.querySelector('#crew-rows tr[data-id="' + (p && p.id) + '"] button[data-act="' + act + '"]');
     if (again && act !== "del") again.focus();
   });
+  // +/- one hour: moves time out, keeping time in. Starts from the bulk "In" time when the row is blank.
+  function addMin(t, m) { var x = ((Builder.toMin(t) + m) % 1440 + 1440) % 1440; return String(Math.floor(x / 60)).padStart(2, "0") + ":" + String(x % 60).padStart(2, "0"); }
+  function nudgeHours(p, step) {
+    if (!p.tin && !p.tout) { if (step < 0) return; p.tin = $("bulk-in").value || "06:00"; p.tout = p.tin; }
+    else if (!p.tin) p.tin = p.tout;
+    else if (!p.tout) p.tout = p.tin;
+    var h = Math.min(hoursOf(p) + step, 23);
+    if (h <= 0) { p.tin = ""; p.tout = ""; return; }
+    p.tout = addMin(p.tin, Math.round(h * 60));
+  }
   $("add-person").addEventListener("click", function () {
     var last = day.crew[day.crew.length - 1] || {};
     var p = { id: uid(), name: "", empId: "", position: "", tab: last.tab || "trades", lemClass: "", shift: "Day", tin: "", tout: "", activity: last.activity || "", cwp: last.cwp || "", cost: last.cost || "", sub: "", lemOrder: null };
