@@ -887,6 +887,7 @@ var Builder = (function () {
     if (crew.length > rows.length) throw new Error("The sign-in sheet has " + rows.length + " rows but the crew has " + crew.length + " people.");
     // Drop yesterday's handwritten signatures (pictures inside the table), keep logos above it
     var last = rows.length ? rows[rows.length - 1] : h.row;
+    wb._workerRows = { sheet: ws.name, from: h.row, to: last + 1 };
     if (ws._media) ws._media = ws._media.filter(function (m) {
       var tl = m.range && m.range.tl; if (!tl) return true;
       var r1 = (tl.nativeRow != null ? tl.nativeRow : Math.floor(tl.row || 0)) + 1;
@@ -1063,7 +1064,8 @@ var Builder = (function () {
   }
 
   // ExcelJS drops pen/ink signatures, shapes, grouped pictures and header/footer pictures when it saves.
-  // Put the LEM template's own drawings back on each tab so sign-offs come through as they were.
+  // Put the template's own drawings back on each tab so sign-offs come through as they were.
+  // dropRows {sheet, from, to}: on that tab, leave out drawings that start inside those rows (workers' signatures).
   var REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
   var AFTER_DRAWING = ["legacyDrawing", "legacyDrawingHF", "drawingHF", "picture", "oleObjects", "controls", "webPublishItems", "tableParts", "extLst"];
   var AFTER_HF = ["drawingHF", "picture", "oleObjects", "controls", "webPublishItems", "tableParts", "extLst"];
@@ -1102,7 +1104,18 @@ var Builder = (function () {
     }
     return xml.replace(/<\/(\w+:)?worksheet>\s*$/, function (end) { return tag + end; });
   }
-  async function keepDrawings(outBuf, tplBytes) {
+  function dropAnchors(xml, from, to) {
+    var doc = new DOMParser().parseFromString(xml, "application/xml"), root = doc.documentElement;
+    Array.prototype.slice.call(root.children).forEach(function (el) {
+      var f = el.getElementsByTagNameNS("*", "from")[0];
+      var r = f && f.getElementsByTagNameNS("*", "row")[0];
+      if (!r) return;
+      var row = +r.textContent + 1;
+      if (row >= from && row <= to) root.removeChild(el);
+    });
+    return new XMLSerializer().serializeToString(doc);
+  }
+  async function keepDrawings(outBuf, tplBytes, dropRows) {
     var tz = await JSZip.loadAsync(tplBytes), oz = await JSZip.loadAsync(outBuf);
     var tSheets = await sheetPaths(tz), oSheets = await sheetPaths(oz);
     var tCT = await tz.file("[Content_Types].xml").async("string"), oCT = await oz.file("[Content_Types].xml").async("string");
@@ -1150,6 +1163,7 @@ var Builder = (function () {
         var rid = /:id="([^"]*)"/.exec(tm[0]), rel = rid && tRels.find(function (r) { return r.id === rid[1]; });
         if (!rel) continue;
         var dest = await copyPart(resolvePart(tPath, rel.target)); if (!dest) continue;
+        if (k === 0 && dropRows && dropRows.sheet === name) oz.file(dest, dropAnchors(await oz.file(dest).async("string"), dropRows.from, dropRows.to));
         var newId = "rIdKept" + k;
         var om = new RegExp("<(\\w+:)?" + el + "\\b[^>]*/>").exec(oXml);
         if (om) {
@@ -1200,8 +1214,8 @@ var Builder = (function () {
     wb.calcProperties = wb.calcProperties || {};
     wb.calcProperties.fullCalcOnLoad = true;
     var buf = await wb.xlsx.writeBuffer();
-    if (kind === "lem" && tpl && tpl.bytes && window.JSZip) {
-      try { buf = await keepDrawings(buf, tpl.bytes); } catch (e) { console.warn("Couldn't copy the LEM's drawings", e); }
+    if (tpl && tpl.bytes && window.JSZip) {
+      try { buf = await keepDrawings(buf, tpl.bytes, kind === "signin" ? wb._workerRows : null); } catch (e) { console.warn("Couldn't copy the template's drawings", e); }
     }
     var p = day.date.split("-");
     var name = kind === "signin"
@@ -1988,7 +2002,7 @@ var Store = (function () {
   // Trades default to the Maintenance cost code; taking someone's hours away clears their code
   var DEFAULT_TRADES_CODE = "Maintenance";
   function defaultCode(p) { if (p.tab === "trades" && !p.cost && hoursOf(p)) p.cost = DEFAULT_TRADES_CODE; }
-  function clearHours(p) { p.tin = ""; p.tout = ""; p.cost = ""; }
+  function clearHours(p) { p.tin = ""; p.tout = ""; p.cost = ""; p.activity = ""; }
   function nudgeHours(p, step) {
     if (!p.tin && !p.tout) { if (step < 0) return; p.tin = $("bulk-in").value || "06:00"; p.tout = p.tin; }
     else if (!p.tin) p.tin = p.tout;
@@ -2021,7 +2035,7 @@ var Store = (function () {
   });
   $("bulk-apply").addEventListener("click", function () {
     var a = $("bulk-in").value, b = $("bulk-out").value;
-    tickedList().forEach(function (p) { p.tin = a; p.tout = b; if (a && b) defaultCode(p); else p.cost = ""; }); sortWorkingFirst(); renderCrew(); scheduleSave();
+    tickedList().forEach(function (p) { if (a && b) { p.tin = a; p.tout = b; defaultCode(p); } else clearHours(p); }); sortWorkingFirst(); renderCrew(); scheduleSave();
   });
   $("bulk-clear").addEventListener("click", function () {
     tickedList().forEach(clearHours); renderCrew(); scheduleSave();
