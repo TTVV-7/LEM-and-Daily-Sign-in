@@ -169,6 +169,7 @@ tr.st-idle .name { font-weight: 500; }
 .lem-for .rate { display: inline-block; font-family: var(--body); font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--muted); vertical-align: middle; margin-left: 8px; }
 .lem-for .rate.hot { border-color: var(--accent); color: var(--ink); }
 .rules-body { flex-direction: column; }
+.rules-body input.code-in { width: 15em; font-family: var(--mono); }
 .rules-line b { color: var(--ink); font-weight: 600; margin-right: 4px; }
 .date-quick .btn { padding: 7px 10px; }
 .field { display: grid; gap: 4px; font-size: 12px; color: var(--muted); font-family: var(--mono); letter-spacing: .06em; text-transform: uppercase; }
@@ -323,6 +324,9 @@ tr.st-idle .name { font-weight: 500; }
         <div class="rules-line"><b>Weekdays</b> <label for="r-st">straight time up to <input type="number" id="r-st" min="0" step="0.5" value="8"> hrs,</label> <label for="r-ot">overtime up to <input type="number" id="r-ot" min="0" step="0.5" value="11"> hrs, double time after</label></div>
         <div class="rules-line"><b>Saturdays</b> <label for="r-sat">overtime up to <input type="number" id="r-sat" min="0" step="0.5" value="11"> hrs, double time after</label></div>
         <div class="rules-line"><b>Sundays and stat holidays</b> all double time. Tick “Stat holiday” beside the date for a stat.</div>
+        <div class="rules-line"><b>Default codes</b> given to anyone with hours who has no code yet (Activity ID on the sign-in, cost code on the LEM).
+          <label for="c-trades">Trades <input type="text" id="c-trades" class="code-in"></label>
+          <label for="c-staff">Staff <input type="text" id="c-staff" class="code-in"></label></div>
         <label for="r-break">Unpaid break taken off LEM hours <input type="number" id="r-break" min="0" step="0.25" value="0"> hrs</label>
       </div>
     </details>
@@ -898,7 +902,7 @@ var Builder = (function () {
         cell.value = m / 1440;
         if (!/h/i.test(cell.numFmt || "")) cell.numFmt = "h:mm";
       });
-      put(ws, r, h.act, p.activity);
+      if (hoursOf(p, 0)) put(ws, r, h.act, p.activity);
     });
     setHeaderFields(ws, day);
     return ws.name;
@@ -1706,7 +1710,7 @@ var Store = (function () {
   var uid = Importer.uid;
 
   var day = { date: daysAgo(1), shift: "D", crew: [], equipment: [] };
-  var settings = { stMax: 8, otMax: 11, satOt: 11, breakHrs: 0 };
+  var settings = { stMax: 8, otMax: 11, satOt: 11, breakHrs: 0, codes: { trades: "Maintenance", staff: "CWP-2200-C-1-001-SC10" }, roster: [] };
   var templates = { signin: null, lem: null };   // {name, bytes}
   var savedDays = [];
   var ticked = {};
@@ -1877,6 +1881,8 @@ var Store = (function () {
       day.crew = imp.crew;
       if (found.lem) day.equipment = imp.equipment;
     }
+    if (found.signin && !merging) { settings.roster = rosterFrom(found.signin.data); saveSettings(); }
+    else if (merging && added.length) rememberOrder();
     ticked = {};
     $("undo-btn").hidden = false;
     var kept = [];
@@ -1950,7 +1956,15 @@ var Store = (function () {
     if (!p || !f) return;
     if (f === "position" && (!p.lemClass || p.lemClass === p.position)) { p.lemClass = t.value; tr.querySelector('[data-f="lemClass"]').value = t.value; }
     p[f] = t.value;
-    if (f === "tin" || f === "tout" || f === "tab") { var had = p.cost; defaultCode(p); if (p.cost !== had) tr.querySelector('[data-f="cost"]').value = p.cost; }
+    if (f === "tab") {
+      var other = codeFor(p.tab === "trades" ? "staff" : "trades");
+      if (p.activity === other) p.activity = "";
+      if (p.cost === other || p.tab !== "trades" && p.cost === codeFor("trades")) p.cost = "";
+    }
+    if (f === "tin" || f === "tout" || f === "tab") {
+      defaultCode(p);
+      tr.querySelector('[data-f="cost"]').value = p.cost; tr.querySelector('[data-f="activity"]').value = p.activity;
+    }
     updateCalc(tr, p); renderSummary(); scheduleSave();
   });
   $("crew-rows").addEventListener("change", function (e) {
@@ -1958,7 +1972,7 @@ var Store = (function () {
     if (!p) return;
     if (t.hasAttribute("data-tick")) { if (t.checked) ticked[p.id] = 1; else delete ticked[p.id]; renderTicks(); return; }
     var f = t.getAttribute("data-f");
-    if (f === "name") { t.value = Importer.tidyName(t.value); p.name = t.value; scheduleSave(); }
+    if (f === "name") { t.value = Importer.tidyName(t.value); p.name = t.value; rememberOrder(); scheduleSave(); }
   });
   $("crew-rows").addEventListener("click", function (e) {
     var b = e.target.closest("button[data-act]"); if (!b) return;
@@ -1968,16 +1982,67 @@ var Store = (function () {
     if (act === "zero") clearHours(p);
     if (act === "up" && i > 0) { day.crew.splice(i, 1); day.crew.splice(i - 1, 0, p); }
     if (act === "down" && i < day.crew.length - 1) { day.crew.splice(i, 1); day.crew.splice(i + 1, 0, p); }
+    if (act === "up" || act === "down") rememberOrder();
     renderCrew(); scheduleSave();
     var again = document.querySelector('#crew-rows tr[data-id="' + (p && p.id) + '"] button[data-act="' + act + '"]');
     if (again && act !== "del") again.focus();
   });
   // +/- one hour: moves time out, keeping time in. Starts from the bulk "In" time when the row is blank.
   function addMin(t, m) { var x = ((Builder.toMin(t) + m) % 1440 + 1440) % 1440; return String(Math.floor(x / 60)).padStart(2, "0") + ":" + String(x % 60).padStart(2, "0"); }
-  // Trades default to the Maintenance cost code; taking someone's hours away clears their code
-  var DEFAULT_TRADES_CODE = "Maintenance";
-  function defaultCode(p) { if (p.tab === "trades" && !p.cost && hoursOf(p)) p.cost = DEFAULT_TRADES_CODE; }
+  // Anyone with hours gets their tab's default code (Activity ID, and the LEM cost code for trades);
+  // anyone without hours has no code
+  function codeFor(tab) { return (settings.codes || {})[tab === "trades" ? "trades" : "staff"] || ""; }
+  function defaultCode(p) {
+    if (!hoursOf(p)) return;
+    var c = codeFor(p.tab);
+    if (!p.activity) p.activity = c;
+    if (p.tab === "trades" && !p.cost) p.cost = c;
+  }
   function clearHours(p) { p.tin = ""; p.tout = ""; p.cost = ""; p.activity = ""; }
+  function tidyCodes() {
+    day.crew.forEach(function (p) {
+      if (hoursOf(p)) defaultCode(p);
+      else if (!p.tin && !p.tout) { p.cost = ""; p.activity = ""; }
+    });
+  }
+  function renderCodes() { $("c-trades").value = codeFor("trades"); $("c-staff").value = codeFor("staff"); }
+  [["c-trades", "trades"], ["c-staff", "staff"]].forEach(function (pair) {
+    $(pair[0]).addEventListener("change", function () {
+      var old = codeFor(pair[1]), now = this.value.trim();
+      settings.codes = Object.assign({}, settings.codes); settings.codes[pair[1]] = now;
+      // People still on the old default move to the new one
+      day.crew.forEach(function (p) {
+        if ((p.tab === "trades" ? "trades" : "staff") !== pair[1]) return;
+        var same = function (v) { return String(v || "").trim().toLowerCase() === old.trim().toLowerCase(); };
+        if (old && same(p.activity)) p.activity = now;
+        if (old && same(p.cost)) p.cost = now;
+      });
+      tidyCodes(); renderCrew(); scheduleSave(); saveSettings();
+    });
+  });
+
+  // ----- keep the crew in the order you set (from your sign-in, or moved with the arrows) -----
+  function applyRoster() {
+    var order = {}; (settings.roster || []).forEach(function (k, i) { if (!(k in order)) order[k] = i; });
+    if (!Object.keys(order).length) return;
+    var prev = -1, step = 0;
+    var ranked = day.crew.map(function (p, i) {
+      var k = personKey(p.name), r;
+      if (k in order) { r = order[k]; prev = r; step = 0; } else r = prev + (++step) * 1e-3;   // not on the list: stay after the person above
+      return { p: p, r: r, i: i };
+    });
+    ranked.sort(function (a, b) { return a.r - b.r || a.i - b.i; });
+    day.crew = ranked.map(function (x) { return x.p; });
+  }
+  function rememberOrder() {
+    var keys = day.crew.map(function (p) { return personKey(p.name); }).filter(Boolean), seen = {};
+    keys.forEach(function (k) { seen[k] = 1; });
+    settings.roster = keys.concat((settings.roster || []).filter(function (k) { return !seen[k]; }));
+    saveSettings();
+  }
+  function rosterFrom(signinData) {
+    return signinData ? signinData.people.map(function (s) { return personKey(s.raw); }).filter(Boolean) : [];
+  }
   function nudgeHours(p, step) {
     if (!p.tin && !p.tout) { if (step < 0) return; p.tin = $("bulk-in").value || "06:00"; p.tout = p.tin; }
     else if (!p.tin) p.tin = p.tout;
@@ -1989,7 +2054,7 @@ var Store = (function () {
   }
   $("add-person").addEventListener("click", function () {
     var last = day.crew[day.crew.length - 1] || {};
-    var p = { id: uid(), name: "", empId: "", position: "", tab: last.tab || "trades", lemClass: "", shift: "Day", tin: "", tout: "", activity: last.activity || "", cwp: last.cwp || "", cost: "", sub: "", lemOrder: null };
+    var p = { id: uid(), name: "", empId: "", position: "", tab: last.tab || "trades", lemClass: "", shift: "Day", tin: "", tout: "", activity: "", cwp: last.cwp || "", cost: "", sub: "", lemOrder: null };
     day.crew.push(p); renderCrew(); scheduleSave();
     var inp = document.querySelector('#crew-rows tr[data-id="' + p.id + '"] [data-f="name"]'); if (inp) inp.focus();
   });
@@ -2153,17 +2218,18 @@ var Store = (function () {
   $("f-stat").addEventListener("change", function () { day.stat = this.checked; renderLemFor(); renderCrew(); scheduleSave(); });
   function renderAll() {
     $("f-date").value = day.date; $("f-shift").value = day.shift || "D"; renderLemFor();
+    applyRoster(); tidyCodes();
     renderCrew(); renderEquip(); renderCopyFrom(); renderSummary();
   }
 
   // ----- start -----
   $("f-date").value = day.date;
-  renderAll(); renderLayout();
+  renderCodes(); renderAll(); renderLayout();
   saveState("Loading saved days…");
   (async function () {
     try {
       var s = await Store.get("settings/main");
-      if (s) { settings = Object.assign(settings, s); $("r-st").value = settings.stMax; $("r-ot").value = settings.otMax; $("r-sat").value = settings.satOt; $("r-break").value = settings.breakHrs; }
+      if (s) { settings = Object.assign(settings, s, { codes: Object.assign({}, settings.codes, s.codes) }); renderCodes(); $("r-st").value = settings.stMax; $("r-ot").value = settings.otMax; $("r-sat").value = settings.satOt; $("r-break").value = settings.breakHrs; }
       savedDays = await Store.days();
       var mine = savedDays.find(function (d) { return d.date === day.date; });
       if (mine && !day.crew.length) { day = JSON.parse(JSON.stringify(mine)); day.crew = day.crew || []; day.equipment = day.equipment || []; }
@@ -2171,6 +2237,12 @@ var Store = (function () {
       saveState(mine ? "Saved" : Store.mode() === "db" ? "Not saved yet" : "Saves in this browser only");
       var t1 = await loadTemplate("signin"), t2 = await loadTemplate("lem");
       if (t1 && !templates.signin) templates.signin = t1;
+      if (!(settings.roster || []).length && templates.signin) {
+        try {
+          var r0 = Logic.readWorkbook(XLSX.read(templates.signin.bytes, { type: "array" }));
+          if (r0.kind === "signin") { settings.roster = rosterFrom(r0.data); saveSettings(); renderAll(); }
+        } catch (e) {}
+      }
       if (t2 && !templates.lem) templates.lem = t2;
       renderLayout();
     } catch (e) {

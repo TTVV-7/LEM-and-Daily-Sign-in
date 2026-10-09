@@ -13,7 +13,8 @@ A single-page tool for the daily Workforce Report (sign-in sheet) and LEM Report
   - Weekdays: 8 ST, OT to 11, DT after.
   - Saturdays: OT up to 11, DT after (a 12-hour day is 11 OT + 1 DT).
   - Sundays and stat holidays: all DT. Tick "Stat holiday" beside the date for a stat.
-- Trades get the cost code "Maintenance" as soon as they have hours (you can type a different code). Taking someone's hours away (0, − down to zero, Clear times) also clears their cost code and activity ID.
+- Anyone with hours gets a default code: trades "Maintenance" (Activity ID and LEM cost code), staff "CWP-2200-C-1-001-SC10" (Activity ID). Change the defaults under "Hours rules"; people on the old default move to the new one. You can still type a different code for one person. Anyone without hours has no code on the sign-in or the LEM, and taking someone's hours away (0, − down to zero, Clear times) clears their codes.
+- The crew keeps the order of your sign-in every day. Dropping a sign-in sets the order; moving someone with ↑ ↓ changes it. Saved days and copies follow it too.
 - The date you're making LEMs for is shown in large text under the date, with the rates that apply that day.
 
 Days are saved in the claude.ai artifact's database. Opened as a plain file or on another host, they're saved in the browser.
