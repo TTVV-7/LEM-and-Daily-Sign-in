@@ -268,13 +268,13 @@ tr.st-idle .name { font-weight: 500; }
         <div class="start-row">
           <select id="copy-from" aria-label="Saved day to copy"></select>
           <button class="btn primary" id="copy-btn" type="button">Copy into this day</button>
-          <button class="btn" id="undo-btn" type="button" hidden>Undo copy</button>
+          <button class="btn" id="undo-btn" type="button" hidden>Undo</button>
         </div>
         <div class="hint" id="copy-hint">Copies everyone, their times and the equipment. Then change what's different today.</div>
       </div>
       <div class="drop small" id="fill-drop" tabindex="0" role="button" aria-label="Choose or drop yesterday's Excel files">
         <div class="start-title">Or drop yesterday's sign-in and LEM</div>
-        <div class="hint">Fills the form from the files and keeps their layout for the files you download.</div>
+        <div class="hint">Fills the form from the files and keeps their layout for the files you download. If the crew already has people, only the new workers are added.</div>
         <input type="file" id="fill-file" accept=".xlsx,.xlsm" multiple hidden>
       </div>
     </div>
@@ -1805,6 +1805,9 @@ var Store = (function () {
     renderAll(); scheduleSave();
   });
 
+  // Same person if the names match ignoring case, spaces and punctuation
+  function personKey(name) { return Importer.tidyName(name).toLowerCase().replace(/[^a-z,]/g, ""); }
+  function equipKey(q) { return String(q.asset || q.desc || "").toLowerCase().replace(/\s+/g, " ").trim(); }
   function fillNotice(kind, text) {
     var d = document.createElement("div");
     d.className = "notice " + (kind === "ok" ? "example" : kind);
@@ -1841,8 +1844,26 @@ var Store = (function () {
     if (!found.signin && !found.lem) { fillNotice("err", (bad.join(", ") || "That file") + " isn't a sign-in sheet or a LEM this page can read."); return; }
     var imp = Importer.fromFiles(found.signin && found.signin.data, found.lem && found.lem.data);
     undoDay = JSON.parse(JSON.stringify(day));
-    day.crew = imp.crew;
-    if (found.lem) day.equipment = imp.equipment;
+    // A crew is already filled in: keep everyone as they are and add only the workers who aren't on it yet
+    var merging = day.crew.length > 0, added = [], addedEq = 0;
+    if (merging) {
+      var have = {};
+      day.crew.forEach(function (p) { have[personKey(p.name)] = 1; if (p.empId) have["#" + String(p.empId).trim().toLowerCase()] = 1; });
+      imp.crew.forEach(function (p) {
+        var k = personKey(p.name), id = p.empId ? "#" + String(p.empId).trim().toLowerCase() : null;
+        if (!k || have[k] || (id && have[id])) return;
+        have[k] = 1; if (id) have[id] = 1;
+        p.lemOrder = null; day.crew.push(p); added.push(p.name);
+      });
+      if (found.lem) {
+        var haveEq = {};
+        day.equipment.forEach(function (q) { haveEq[equipKey(q)] = 1; });
+        imp.equipment.forEach(function (q) { var k = equipKey(q); if (k && !haveEq[k]) { haveEq[k] = 1; day.equipment.push(q); addedEq++; } });
+      }
+    } else {
+      day.crew = imp.crew;
+      if (found.lem) day.equipment = imp.equipment;
+    }
     ticked = {};
     $("undo-btn").hidden = false;
     var kept = [];
@@ -1852,8 +1873,13 @@ var Store = (function () {
       kept.push(k === "signin" ? "sign-in" : "LEM");
       try { await saveTemplate(k, found[k].name, found[k].bytes); } catch (e) {}
     }
-    var msg = "Filled in " + day.crew.length + " people" + (found.lem ? " and " + day.equipment.length + " pieces of equipment" : "") +
-      " from " + kept.join(" and ") + (imp.date ? " (" + niceDate(imp.date) + ")" : "") + ". The date is still " + niceDate(day.date) + ".";
+    var from = " from " + kept.join(" and ") + (imp.date ? " (" + niceDate(imp.date) + ")" : "");
+    var msg = !merging
+      ? "Filled in " + day.crew.length + " people" + (found.lem ? " and " + day.equipment.length + " pieces of equipment" : "") + from + ". The date is still " + niceDate(day.date) + "."
+      : (added.length ? "Added " + added.length + " new " + (added.length === 1 ? "worker" : "workers") + from + ": " + added.join("; ") + "."
+        : "Everyone in " + kept.join(" and ") + " is already on the crew. Nobody new to add.") +
+        (addedEq ? " Also added " + addedEq + " new piece" + (addedEq === 1 ? "" : "s") + " of equipment." : "") +
+        " Everyone already listed was left as is. Use Undo to take the new workers back off.";
     if (!found.signin || !found.lem) msg += " Drop the " + (found.signin ? "LEM" : "sign-in") + " too so its layout is used.";
     fillNotice("ok", msg);
     renderAll(); renderLayout(); scheduleSave();
