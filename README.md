@@ -6,7 +6,7 @@ A single-page tool for the daily Workforce Report (sign-in sheet) and LEM Report
 - The date starts on yesterday, since most LEMs are for the day before. Yesterday / Today buttons sit next to the date.
 - Enter the crew once: name, ID, position, LEM tab (staff or trades), shift, time in/out, activity, CWP and cost code, plus equipment.
 - **Start from a saved day** copies a previous day (people, times, equipment) so you only change what's different.
-- **Drop yesterday's sign-in and LEM** to fill the form from those files. The files are kept as templates, so downloads keep your own layout, logos and formulas. Workers' signatures on the sign-in are removed.
+- **Drop yesterday's sign-in and LEM** to fill the form from those files. The files are kept as templates, so downloads keep your own layout, logos and formulas. Workers' signatures on the sign-in are removed. Signatures on the LEM (pictures, pen/ink signatures, shapes, header and footer pictures) are kept exactly as they were in the file you dropped.
 - Each person has − / + buttons beside their hours to take off or add an hour (time out moves, time in stays), and a 0 button to set them to zero hours.
 - Download the sign-in and LEM. Both come from the same entries, so the hours always match.
 - Trades hours are split into straight time, overtime and double time with the rules under "Hours rules":
@@ -22,4 +22,4 @@ Days are saved in the claude.ai artifact's database. Opened as a plain file or o
 ## Check two files
 Drop a finished sign-in and LEM to compare every person's hours. Problems are shown row by row on copies of the sheets, with cell references.
 
-Everything runs in the browser using SheetJS and ExcelJS from cdnjs.
+Everything runs in the browser using SheetJS, ExcelJS and JSZip from cdnjs.

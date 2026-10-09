@@ -415,6 +415,7 @@ tr.st-idle .name { font-weight: 500; }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script id="logic">
 // ---------- Parsing & matching (no DOM) ----------
 var Logic = (function () {
@@ -1061,6 +1062,116 @@ var Builder = (function () {
     return wb;
   }
 
+  // ExcelJS drops pen/ink signatures, shapes, grouped pictures and header/footer pictures when it saves.
+  // Put the LEM template's own drawings back on each tab so sign-offs come through as they were.
+  var REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+  var AFTER_DRAWING = ["legacyDrawing", "legacyDrawingHF", "drawingHF", "picture", "oleObjects", "controls", "webPublishItems", "tableParts", "extLst"];
+  var AFTER_HF = ["drawingHF", "picture", "oleObjects", "controls", "webPublishItems", "tableParts", "extLst"];
+  function xmlAttr(tag, name) { var m = new RegExp("\\s" + name + '="([^"]*)"').exec(tag); return m ? m[1] : null; }
+  function relsPath(part) { var i = part.lastIndexOf("/"); return part.slice(0, i + 1) + "_rels/" + part.slice(i + 1) + ".rels"; }
+  function resolvePart(from, target) {
+    if (target.charAt(0) === "/") return target.slice(1);
+    var out = from.split("/").slice(0, -1);
+    target.split("/").forEach(function (seg) { if (seg === "..") out.pop(); else if (seg !== ".") out.push(seg); });
+    return out.join("/");
+  }
+  function relTarget(from, to) {
+    var a = from.split("/").slice(0, -1), b = to.split("/"), i = 0;
+    while (i < a.length && i < b.length - 1 && a[i] === b[i]) i++;
+    return a.slice(i).map(function () { return ".."; }).concat(b.slice(i)).join("/");
+  }
+  async function readRels(zip, part) {
+    var f = zip.file(relsPath(part)); if (!f) return [];
+    var x = await f.async("string"), out = [], re = /<Relationship\b[^>]*>/g, m;
+    while ((m = re.exec(x))) out.push({ id: xmlAttr(m[0], "Id"), type: xmlAttr(m[0], "Type"), target: xmlAttr(m[0], "Target"), external: xmlAttr(m[0], "TargetMode") === "External" });
+    return out;
+  }
+  async function sheetPaths(zip) {
+    var wbx = await zip.file("xl/workbook.xml").async("string"), rels = await readRels(zip, "xl/workbook.xml"), out = {}, re = /<sheet\b[^>]*>/g, m;
+    while ((m = re.exec(wbx))) {
+      var rid = /\br:id="([^"]*)"/.exec(m[0]) || /\s[\w]+:id="([^"]*)"/.exec(m[0]);
+      var rel = rid && rels.find(function (r) { return r.id === rid[1]; });
+      if (rel) out[xmlAttr(m[0], "name").replace(/&amp;/g, "&")] = resolvePart("xl/workbook.xml", rel.target);
+    }
+    return out;
+  }
+  function insertBefore(xml, tag, names) {
+    for (var i = 0; i < names.length; i++) {
+      var at = xml.search(new RegExp("<(\\w+:)?" + names[i] + "[\\s/>]"));
+      if (at >= 0) return xml.slice(0, at) + tag + xml.slice(at);
+    }
+    return xml.replace(/<\/(\w+:)?worksheet>\s*$/, function (end) { return tag + end; });
+  }
+  async function keepDrawings(outBuf, tplBytes) {
+    var tz = await JSZip.loadAsync(tplBytes), oz = await JSZip.loadAsync(outBuf);
+    var tSheets = await sheetPaths(tz), oSheets = await sheetPaths(oz);
+    var tCT = await tz.file("[Content_Types].xml").async("string"), oCT = await oz.file("[Content_Types].xml").async("string");
+    var copied = {}, n = 0;
+    function typeOf(part) {
+      var m = new RegExp('<Override[^>]*PartName="/' + part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + '"[^>]*>').exec(tCT);
+      return m ? xmlAttr(m[0], "ContentType") : null;
+    }
+    function ensureType(part, type) {
+      var ext = part.split(".").pop().toLowerCase();
+      if (type) { oCT = oCT.replace("</Types>", '<Override PartName="/' + part + '" ContentType="' + type + '"/></Types>'); return; }
+      if (new RegExp('<Default[^>]*Extension="' + ext + '"', "i").test(oCT)) return;
+      var d = new RegExp('<Default[^>]*Extension="' + ext + '"[^>]*>', "i").exec(tCT);
+      if (d) oCT = oCT.replace("</Types>", d[0].replace(/\/?>$/, "/>") + "</Types>");
+    }
+    async function copyPart(src) {
+      if (copied[src]) return copied[src];
+      var f = tz.file(src); if (!f) return null;
+      var slash = src.lastIndexOf("/"), dest = src.slice(0, slash + 1) + "kept" + (++n) + "_" + src.slice(slash + 1);
+      copied[src] = dest;
+      oz.file(dest, await f.async("uint8array"));
+      ensureType(dest, typeOf(src));
+      var rels = await readRels(tz, src);
+      if (rels.length) {
+        var x = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
+        for (var i = 0; i < rels.length; i++) {
+          var r = rels[i], tgt = r.target;
+          if (!r.external) { var d = await copyPart(resolvePart(src, r.target)); if (d) tgt = relTarget(dest, d); }
+          x += '<Relationship Id="' + r.id + '" Type="' + r.type + '" Target="' + tgt + '"' + (r.external ? ' TargetMode="External"' : "") + "/>";
+        }
+        oz.file(relsPath(dest), x + "</Relationships>");
+      }
+      return dest;
+    }
+    for (var name in tSheets) {
+      var tPath = tSheets[name], oPath = oSheets[name];
+      if (!oPath || !tz.file(tPath) || !oz.file(oPath)) continue;
+      var tXml = await tz.file(tPath).async("string"), tRels = await readRels(tz, tPath);
+      var oXml = await oz.file(oPath).async("string"), oRelFile = oz.file(relsPath(oPath));
+      var oRels = oRelFile ? await oRelFile.async("string") : '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>';
+      var changed = false;
+      for (var k = 0; k < 2; k++) {
+        var el = k === 0 ? "drawing" : "legacyDrawingHF", after = k === 0 ? AFTER_DRAWING : AFTER_HF;
+        var tm = new RegExp("<(\\w+:)?" + el + "\\b[^>]*/>").exec(tXml); if (!tm) continue;
+        var rid = /:id="([^"]*)"/.exec(tm[0]), rel = rid && tRels.find(function (r) { return r.id === rid[1]; });
+        if (!rel) continue;
+        var dest = await copyPart(resolvePart(tPath, rel.target)); if (!dest) continue;
+        var newId = "rIdKept" + k;
+        var om = new RegExp("<(\\w+:)?" + el + "\\b[^>]*/>").exec(oXml);
+        if (om) {
+          // Drop ExcelJS's own copy of this drawing so the tab has just one
+          oXml = oXml.replace(om[0], "");
+          var oid = /:id="([^"]*)"/.exec(om[0]);
+          if (oid) oRels = oRels.replace(new RegExp('<Relationship\\b[^>]*\\bId="' + oid[1] + '"[^>]*/>'), function (r) {
+            var old = resolvePart(oPath, xmlAttr(r, "Target"));
+            if (!/\/kept\d+_/.test(old)) { oz.remove(old); oz.remove(relsPath(old)); oCT = oCT.replace(new RegExp('<Override[^>]*PartName="/' + old + '"[^>]*/>'), ""); }
+            return "";
+          });
+        }
+        oRels = oRels.replace("</Relationships>", '<Relationship Id="' + newId + '" Type="' + rel.type + '" Target="' + relTarget(oPath, dest) + '"/></Relationships>');
+        oXml = insertBefore(oXml, "<" + el + ' xmlns:r="' + REL_NS + '" r:id="' + newId + '"/>', after);
+        changed = true;
+      }
+      if (changed) { oz.file(oPath, oXml); oz.file(relsPath(oPath), oRels); }
+    }
+    oz.file("[Content_Types].xml", oCT);
+    return oz.generateAsync({ type: "arraybuffer", compression: "DEFLATE" });
+  }
+
   function fileName(tplName, iso, fallback) {
     if (!tplName) return fallback;
     var p = iso.split("-");
@@ -1089,6 +1200,9 @@ var Builder = (function () {
     wb.calcProperties = wb.calcProperties || {};
     wb.calcProperties.fullCalcOnLoad = true;
     var buf = await wb.xlsx.writeBuffer();
+    if (kind === "lem" && tpl && tpl.bytes && window.JSZip) {
+      try { buf = await keepDrawings(buf, tpl.bytes); } catch (e) { console.warn("Couldn't copy the LEM's drawings", e); }
+    }
     var p = day.date.split("-");
     var name = kind === "signin"
       ? fileName(tpl && tpl.name, day.date, p.join(".") + " - Daily Workforce Report.xlsx")
