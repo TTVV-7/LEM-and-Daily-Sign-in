@@ -1229,8 +1229,13 @@ var Importer = (function () {
   }
   var uid = function () { return Math.random().toString(36).slice(2, 10); };
   function shiftOf(s) { return /night/i.test(s || "") ? "Night" : "Day"; }
+  function toMinutes(t) { var m = /^(\d{1,2}):(\d{2})/.exec(t || ""); return m ? +m[1] * 60 + +m[2] : null; }
 
-  function fromFiles(signin, lem) {
+  // opts: { breakHrs, startTime }. The LEM's hours win: if the sign-in times give a different
+  // number (or there are no times), time out is moved so the form shows what the LEM says.
+  function fromFiles(signin, lem, opts) {
+    opts = opts || {};
+    var fixes = [];
     var pairs = signin && lem ? Logic.match(signin.people, lem.people)
       : signin ? signin.people.map(function (s) { return { s: s, l: null }; })
       : lem.people.map(function (l) { return { s: null, l: l }; });
@@ -1250,11 +1255,23 @@ var Importer = (function () {
         activity: s ? s.activity || "" : "", cwp: l ? l.cwp || "" : "", cost: l ? l.cost || "" : "", sub: l ? l.sub || "" : "",
         lemOrder: l ? (l.kind === "trades" ? 1000 : 0) + l.order : null
       };
+    }).map(function (p, i) {
+      var l = pairs[i].l;
+      if (!l || !(l.hours > 0)) return p;
+      var brk = opts.breakHrs || 0, want = Math.round(l.hours * 60);
+      var a = p.tin ? toMinutes(p.tin) : null, b = p.tout ? toMinutes(p.tout) : null;
+      var span = a != null && b != null ? ((b - a) % 1440 + 1440) % 1440 : null;
+      var got = span == null ? null : Math.max(0, span - (span > 0 ? brk * 60 : 0));
+      if (got != null && Math.abs(got - want) < 1) return p;
+      if (a == null) { a = toMinutes(opts.startTime) || 360; p.tin = hhmm(a / 60); }
+      p.tout = hhmm((a + want + brk * 60) / 60);
+      fixes.push({ name: p.name, signin: got == null ? null : got / 60, lem: l.hours });
+      return p;
     });
     var equipment = (lem && lem.equipment || []).map(function (q) {
       return { id: uid(), desc: q.desc, asset: q.asset, shift: shiftOf(q.shift), std: q.std || 0, standby: q.standby || 0, cwp: q.cwp, cost: q.cost };
     });
-    return { crew: crew, equipment: equipment, date: (signin && signin.date) || (lem && lem.date) || null };
+    return { crew: crew, equipment: equipment, fixes: fixes, date: (signin && signin.date) || (lem && lem.date) || null };
   }
   return { fromFiles: fromFiles, tidyName: tidyName, hhmm: hhmm, uid: uid };
 })();
@@ -1842,7 +1859,7 @@ var Store = (function () {
       } catch (e) { bad.push(f.name); }
     }
     if (!found.signin && !found.lem) { fillNotice("err", (bad.join(", ") || "That file") + " isn't a sign-in sheet or a LEM this page can read."); return; }
-    var imp = Importer.fromFiles(found.signin && found.signin.data, found.lem && found.lem.data);
+    var imp = Importer.fromFiles(found.signin && found.signin.data, found.lem && found.lem.data, { breakHrs: settings.breakHrs, startTime: $("bulk-in").value });
     undoDay = JSON.parse(JSON.stringify(day));
     // A crew is already filled in: keep everyone as they are and add only the workers who aren't on it yet
     var merging = day.crew.length > 0, added = [], addedEq = 0;
@@ -1880,6 +1897,11 @@ var Store = (function () {
         : "Everyone in " + kept.join(" and ") + " is already on the crew. Nobody new to add.") +
         (addedEq ? " Also added " + addedEq + " new piece" + (addedEq === 1 ? "" : "s") + " of equipment." : "") +
         " Everyone already listed was left as is. Use Undo to take the new workers back off.";
+    var fixedHere = imp.fixes.filter(function (f) { return !merging || added.indexOf(f.name) >= 0; });
+    if (fixedHere.length && !found.signin) msg += " With no sign-in, times start at " + ($("bulk-in").value || "06:00") + " and run for each person's LEM hours.";
+    else if (fixedHere.length) msg += " Hours taken from the LEM, time out moved to match: " + fixedHere.map(function (f) {
+      return f.name + " (" + (f.signin == null ? "no sign-in times" : "sign-in " + fmt(f.signin)) + " → LEM " + fmt(f.lem) + ")";
+    }).join("; ") + ".";
     if (!found.signin || !found.lem) msg += " Drop the " + (found.signin ? "LEM" : "sign-in") + " too so its layout is used.";
     fillNotice("ok", msg);
     renderAll(); renderLayout(); scheduleSave();
