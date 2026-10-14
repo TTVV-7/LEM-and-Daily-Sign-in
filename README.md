@@ -7,6 +7,7 @@ A single-page tool for the daily Workforce Report (sign-in sheet) and LEM Report
 - **Start from a saved day** copies a previous day (people, times, equipment) so you only change what's different.
 - **Drop yesterday's sign-in and LEM** to fill the form from those files. The files are kept as templates, so downloads keep your own layout, logos and formulas. Workers' signatures on the sign-in are removed.
 - Download the sign-in and LEM. Both come from the same entries, so the hours always match.
+- Trades can't be put in for more than 12 hours. The row turns red and the files won't download until it's fixed.
 - Trades hours are split into straight time, overtime and double time with the rules under "Hours rules" (default: 8 ST, OT to 11, DT after).
 
 Days are saved in the claude.ai artifact's database. Opened as a plain file or on another host, they're saved in the browser.

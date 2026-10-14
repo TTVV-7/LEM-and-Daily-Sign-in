@@ -1722,10 +1722,12 @@ var Store = (function () {
   // ----- crew table -----
   function hoursOf(p) { return Builder.hoursOf(p, 0); }
   function lemHours(p) { return Builder.hoursOf(p, settings.breakHrs); }
+  var TRADES_MAX = 12;
+  function overMax(p) { return p.tab === "trades" && lemHours(p) > TRADES_MAX; }
   function opt(v, label, cur) { return '<option value="' + v + '"' + (v === cur ? " selected" : "") + ">" + label + "</option>"; }
   function crewRow(p, i) {
     var h = hoursOf(p), partial = (!!p.tin) !== (!!p.tout);
-    return '<tr data-id="' + p.id + '" class="' + (partial ? "bad" : h ? "" : "off") + '">' +
+    return '<tr data-id="' + p.id + '" class="' + (partial || overMax(p) ? "bad" : h ? "" : "off") + '">' +
       '<td class="tick"><input type="checkbox" data-tick ' + (ticked[p.id] ? "checked" : "") + ' aria-label="Tick ' + esc(p.name) + '"></td>' +
       '<td class="sticky"><input class="w-name" data-f="name" value="' + esc(p.name) + '" placeholder="Last, First" aria-label="Name"></td>' +
       '<td><input class="w-id" data-f="empId" value="' + esc(p.empId) + '" aria-label="ID number"></td>' +
@@ -1743,9 +1745,9 @@ var Store = (function () {
   }
   function updateCalc(tr, p) {
     var h = hoursOf(p), lh = lemHours(p), partial = (!!p.tin) !== (!!p.tout);
-    tr.className = partial ? "bad" : h ? "" : "off";
+    tr.className = partial || overMax(p) ? "bad" : h ? "" : "off";
     var hc = tr.querySelector('[data-c="hrs"]'), sc = tr.querySelector('[data-c="split"]');
-    hc.textContent = partial ? (p.tin ? "no out" : "no in") : h ? fmt(lh) : "off";
+    hc.textContent = partial ? (p.tin ? "no out" : "no in") : h ? fmt(lh) + (overMax(p) ? " > " + TRADES_MAX : "") : "off";
     hc.className = "calc" + (h ? "" : " off");
     if (p.tab === "trades" && lh) { var s = Builder.split(lh, settings); sc.textContent = fmt(s.st) + " · " + fmt(s.ot) + " · " + fmt(s.dt); }
     else sc.textContent = "";
@@ -1855,16 +1857,18 @@ var Store = (function () {
 
   // ----- summary -----
   function renderSummary() {
-    var working = 0, staffH = 0, tradesH = 0, partial = 0;
+    var working = 0, staffH = 0, tradesH = 0, partial = 0, over = 0;
     day.crew.forEach(function (p) {
       var h = lemHours(p);
       if ((!!p.tin) !== (!!p.tout)) partial++;
+      if (overMax(p)) over++;
       if (h) { working++; if (p.tab === "trades") tradesH += h; else staffH += h; }
     });
     $("crew-count").textContent = day.crew.length ? day.crew.length + " listed · " + working + " working" : "";
     $("gen-sum").innerHTML = esc(niceDate(day.date)) + " · " + working + " working · " + fmt(staffH + tradesH) + " hrs " +
       "<span>(staff " + fmt(staffH) + " · trades " + fmt(tradesH) + ")</span>" +
-      (partial ? ' <span style="color:var(--bad)">· ' + partial + " missing a time in or out</span>" : "");
+      (partial ? ' <span style="color:var(--bad)">· ' + partial + " missing a time in or out</span>" : "") +
+      (over ? ' <span style="color:var(--bad)">· ' + over + " trades over " + TRADES_MAX + " hrs</span>" : "");
   }
 
   // ----- day fields & rules -----
@@ -1912,6 +1916,7 @@ var Store = (function () {
     day.crew.forEach(function (p) {
       if (!p.name.trim()) out.push("a row has no name");
       else if ((!!p.tin) !== (!!p.tout)) out.push(p.name + " has a time " + (p.tin ? "in but no time out" : "out but no time in"));
+      else if (overMax(p)) out.push(p.name + " is down for " + fmt(lemHours(p)) + " hrs; trades can't go over " + TRADES_MAX);
     });
     return out;
   }
