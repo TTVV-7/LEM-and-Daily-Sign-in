@@ -441,8 +441,22 @@ var Logic = (function () {
       var d = XLSX.SSF.parse_date_code(v);
       if (d) return d.y + "-" + String(d.m).padStart(2, "0") + "-" + String(d.d).padStart(2, "0");
     }
-    var t = Date.parse(txt(v));
-    return isNaN(t) ? null : new Date(t).toISOString().slice(0, 10);
+    var s = txt(v), m, y, mo, d;
+    if ((m = s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/))) { y = +m[1]; mo = +m[2]; d = +m[3]; }
+    else if ((m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2}|\d{4})$/))) {
+      // Day first (17/10/2026), unless that can't be right (10/17/2026)
+      d = +m[1]; mo = +m[2]; y = +m[3];
+      if (mo > 12 && d <= 12) { mo = +m[1]; d = +m[2]; }
+      if (y < 100) y += 2000;
+    } else {
+      // Text with a month name ("Oct 17, 2026"); read in local time so it can't slip a day
+      var t = Date.parse(s);
+      if (isNaN(t)) return null;
+      var dt = new Date(t); y = dt.getFullYear(); mo = dt.getMonth() + 1; d = dt.getDate();
+    }
+    var chk = new Date(Date.UTC(y, mo - 1, d));
+    if (mo < 1 || mo > 12 || chk.getUTCDate() !== d) return null;
+    return y + "-" + String(mo).padStart(2, "0") + "-" + String(d).padStart(2, "0");
   }
   function findDate(rows) {
     for (var r = 0; r < Math.min(rows.length, 20); r++) {
@@ -1362,6 +1376,9 @@ var Importer = (function () {
     results.hidden = false;
     if (state.signin.date && state.lem.date && state.signin.date !== state.lem.date)
       notice("warn", "Dates don't match: sign-in is <b>" + esc(state.signin.date) + "</b>, LEM is <b>" + esc(state.lem.date) + "</b>.");
+    else if (!state.signin.date || !state.lem.date)
+      notice("warn", "Couldn't read the date on the " + (!state.signin.date && !state.lem.date ? "sign-in or the LEM" : !state.signin.date ? "sign-in" : "LEM") +
+        ", so the dates weren't compared. Check the cell next to <b>Date:</b>.");
 
     var brk = parseFloat($("break").value) || 0;
     var res = Logic.evaluate(Logic.match(state.signin.people, state.lem.people), brk);
