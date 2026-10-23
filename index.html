@@ -223,6 +223,12 @@ tr.st-idle .name { font-weight: 500; }
 .gen-msg { font-size: 14px; }
 .gen-msg.ok { color: var(--ok); } .gen-msg.err { color: var(--bad); }
 .foot { font-size: 13px; color: var(--muted); max-width: 70ch; }
+.scan-pages { display: flex; flex-wrap: wrap; gap: 10px; }
+.scan-pages img { display: block; max-width: 100%; max-height: 260px; border: 1px solid var(--line); border-radius: 6px; background: #fff; cursor: zoom-in; }
+.scan-pages img.big { max-height: none; width: 100%; cursor: zoom-out; }
+.scan-pages:empty { display: none; }
+.notice .btn { margin-left: 10px; }
+.notice ul { margin: 4px 0 0; padding-left: 20px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -231,12 +237,12 @@ tr.st-idle .name { font-weight: 500; }
   <header>
     <div class="eyebrow">Daily sign-in ↔ LEM</div>
     <h1>LEM Hours Check<span class="tick">.</span></h1>
-    <p class="lede">Fill in the day once and get a matching Daily Workforce Report and LEM. Or drop two finished files to check that every person's hours line up.</p>
+    <p class="lede">Fill in the day once and get a matching Daily Workforce Report and LEM. Or drop the sign-in (Excel or a scan of the signed sheet) and the LEM to check that every person's hours line up.</p>
   </header>
 
   <div class="tabs" role="tablist">
     <button type="button" role="tab" id="tabbtn-fill" aria-selected="true">Fill in the day</button>
-    <button type="button" role="tab" id="tabbtn-check" aria-selected="false">Check two files</button>
+    <button type="button" role="tab" id="tabbtn-check" aria-selected="false">Check sign-in vs LEM</button>
   </div>
 
   <section id="tab-fill" class="fill">
@@ -257,10 +263,10 @@ tr.st-idle .name { font-weight: 500; }
         </div>
         <div class="hint" id="copy-hint">Copies everyone, their times and the equipment. Then change what's different today.</div>
       </div>
-      <div class="drop small" id="fill-drop" tabindex="0" role="button" aria-label="Choose or drop yesterday's Excel files">
-        <div class="start-title">Or drop yesterday's sign-in and LEM</div>
-        <div class="hint">Fills the form from the files and keeps their layout for the files you download.</div>
-        <input type="file" id="fill-file" accept=".xlsx,.xlsm" multiple hidden>
+      <div class="drop small" id="fill-drop" tabindex="0" role="button" aria-label="Choose or drop Excel files or a scanned sign-in">
+        <div class="start-title">Or drop a scanned sign-in, or yesterday's files</div>
+        <div class="hint">A photo or PDF of today's signed sheet fills in everyone's times. Yesterday's Excel sign-in and LEM fill the form and keep their layout for the files you download.</div>
+        <input type="file" id="fill-file" accept=".xlsx,.xlsm,.pdf,image/*" multiple hidden>
       </div>
     </div>
     <div id="fill-notices" style="display:grid;gap:8px"></div>
@@ -325,14 +331,14 @@ tr.st-idle .name { font-weight: 500; }
 
   <section id="tab-check" style="display:grid;gap:22px" hidden>
 
-  <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose or drop Excel files">
+  <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose or drop the sign-in and LEM">
     <div class="drop-head">
-      <div class="drop-title">Drop both Excel files here</div>
-      <div class="drop-hint">or click to choose · .xlsx / .xls · files never leave your browser</div>
+      <div class="drop-title">Drop the sign-in and the LEM here</div>
+      <div class="drop-hint">or click to choose · sign-in as Excel, a photo or a PDF scan · LEM as Excel</div>
     </div>
     <div class="slots">
       <div class="slot empty" id="slot-signin">
-        <div class="slot-label"><span class="dot"></span>Daily sign-in</div>
+        <div class="slot-label"><span class="dot"></span>Daily sign-in · Excel or scan</div>
         <div class="slot-file">Not loaded</div>
         <div class="slot-meta"></div>
       </div>
@@ -342,7 +348,7 @@ tr.st-idle .name { font-weight: 500; }
         <div class="slot-meta"></div>
       </div>
     </div>
-    <input type="file" id="file" accept=".xlsx,.xlsm,.xls" multiple hidden>
+    <input type="file" id="file" accept=".xlsx,.xlsm,.xls,.pdf,image/*" multiple hidden>
   </div>
 
   <div id="notices" style="display:grid;gap:8px"></div>
@@ -373,7 +379,7 @@ tr.st-idle .name { font-weight: 500; }
         <span>Last column shows what the other sheet says.</span>
       </div>
       <div class="sheets">
-        <div class="sheet-panel"><h2>Daily sign-in <small id="signin-file"></small></h2><div id="signin-grids"></div></div>
+        <div class="sheet-panel"><h2>Daily sign-in <small id="signin-file"></small></h2><div class="scan-pages" id="signin-scan"></div><div id="signin-grids"></div></div>
         <div class="sheet-panel"><h2>LEM <small id="lem-file"></small></h2><div id="lem-grids" style="display:grid;gap:14px"></div></div>
       </div>
     </div>
@@ -712,7 +718,13 @@ var Logic = (function () {
     });
   }
 
-  return { readWorkbook: readWorkbook, match: match, evaluate: evaluate, toHours: toHours, splitName: splitName, toDateStr: toDateStr, lev: lev };
+  // A sign-in typed out from a scan: first row is the headings
+  function readRows(rows, sheetName) {
+    var s = parseSignIn(rows, sheetName, { r: 0, c: 0 });
+    return s && s.people.length ? { people: s.people, date: s.date, sheets: [sheetName], grids: [s.grid] } : null;
+  }
+
+  return { readWorkbook: readWorkbook, readRows: readRows, match: match, evaluate: evaluate, toHours: toHours, splitName: splitName, toDateStr: toDateStr, lev: lev };
 })();
 if (typeof module !== "undefined") module.exports = Logic;
 </script>
@@ -1121,6 +1133,181 @@ var Importer = (function () {
   return { fromFiles: fromFiles, tidyName: tidyName, hhmm: hhmm, uid: uid };
 })();
 </script>
+<script id="scan">
+// ---------- Scanned sign-in: photo or PDF -> Claude reads the handwriting -> same shape as an Excel sign-in ----------
+var Scan = (function () {
+  var PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+  var MAX_PAGES = 6, STRIPS = 3, OVERLAP = 0.06;
+  var samplePromise = window.claude && typeof window.claude.use === "function"
+    ? window.claude.use("sample").catch(function () { return null; }) : Promise.resolve(null);
+
+  function isPdf(f) { return f.type === "application/pdf" || /\.pdf$/i.test(f.name); }
+  function isPicture(f) { return isPdf(f) || /^image\//.test(f.type) || /\.(jpe?g|png|webp|gif|bmp|tiff?|heic)$/i.test(f.name); }
+
+  var pdfLib = null;
+  function loadPdfJs() {
+    if (pdfLib) return pdfLib;
+    pdfLib = new Promise(function (res, rej) {
+      var s = document.createElement("script");
+      s.src = PDFJS + "pdf.min.js";
+      s.onload = function () {
+        var lib = window.pdfjsLib;
+        if (!lib) { pdfLib = null; return rej({ code: "pdf_unavailable" }); }
+        lib.GlobalWorkerOptions.workerSrc = PDFJS + "pdf.worker.min.js";
+        res(lib);
+      };
+      s.onerror = function () { pdfLib = null; rej({ code: "pdf_unavailable" }); };
+      document.head.appendChild(s);
+    });
+    return pdfLib;
+  }
+  function blankCanvas(w, h) {
+    var c = document.createElement("canvas"); c.width = Math.round(w); c.height = Math.round(h);
+    var ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+    return c;
+  }
+  async function pdfPages(file) {
+    var lib = await loadPdfJs();
+    var doc = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+    var out = [];
+    for (var i = 1; i <= Math.min(doc.numPages, MAX_PAGES); i++) {
+      var page = await doc.getPage(i), vp = page.getViewport({ scale: 1 });
+      var v = page.getViewport({ scale: 2600 / Math.max(vp.width, vp.height) });
+      var c = blankCanvas(v.width, v.height);
+      await page.render({ canvasContext: c.getContext("2d"), viewport: v }).promise;
+      out.push(c);
+    }
+    return out;
+  }
+  function imagePage(file) {
+    return new Promise(function (res, rej) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        var k = Math.min(1, 3200 / Math.max(img.naturalWidth, img.naturalHeight));
+        var c = blankCanvas(img.naturalWidth * k, img.naturalHeight * k);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url); res(c);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); rej({ code: "image_unreadable", file: file.name }); };
+      img.src = url;
+    });
+  }
+  function jpeg(src, y0, y1) {
+    var h = Math.round((y1 - y0) * src.height), c = blankCanvas(src.width, h);
+    c.getContext("2d").drawImage(src, 0, Math.round(y0 * src.height), src.width, h, 0, 0, src.width, h);
+    return new Promise(function (res) { c.toBlob(res, "image/jpeg", 0.9); });
+  }
+
+  function prompt(pages, strips) {
+    var layout = strips
+      ? "There are " + pages + " page(s). For each page you get the whole page first, then " + STRIPS + " overlapping close-up strips of it from top to bottom, so small handwriting is easier to read. Use the close-ups to read; don't list a line twice because it shows in two strips."
+      : "There are " + pages + " page(s), one image each.";
+    return [
+      "These images are a scanned paper Daily Workforce Report (the daily sign-in sheet) from a construction site. Workers print their name, ID/position, time in and time out by hand and sign next to each time.",
+      layout,
+      "Copy every filled-in line of the sign-in table. Reply with only this JSON, no other text:",
+      '{"date":"2026-03-14","shift":"D","rows":[{"line":1,"name":"Hale, Marcus","idPosition":"100201/Superintendent","timeIn":"05:30","timeOut":"17:30","activity":"Maintenance","signedIn":true,"signedOut":true,"unclear":""}]}',
+      "Rules:",
+      "- rows: one entry per line that has a name, top to bottom, page after page. Skip empty lines.",
+      "- line: the printed line number at the start of the row; if there is none, its position in the table.",
+      "- name: as written. If the sheet writes \"Last, First\", keep that. Don't fix spelling. If you can't read it for sure, give your best reading and say so in unclear.",
+      "- idPosition: the ID # / position cell as written, or \"\".",
+      "- timeIn, timeOut: 24-hour \"HH:MM\". Use am/pm if it is written. Otherwise read it as a work shift: on a day shift a time out of \"6:00\" after a 6:00 start is \"18:00\"; on a night shift a time in of \"6:00\" is \"18:00\". If a time is crossed out, use the corrected one. \"\" if nothing is written.",
+      "- signedIn, signedOut: true if there is any signature or initials in the signature box beside that time, false if the box is empty.",
+      "- activity: the activity ID / task cell as written, or \"\".",
+      "- unclear: a short note about anything on that line you couldn't read for sure (for example \"time out 17:30 or 17:00\"), else \"\".",
+      "- date: the date written in the sheet's header as YYYY-MM-DD, or null. shift: \"D\" or \"N\" if the header says, else null."
+    ].join("\n");
+  }
+
+  function clean(t) { return String(t == null ? "" : t).replace(/\s+/g, " ").trim(); }
+  function hhmm(t) {
+    var m = /^(\d{1,2})[:.h]?(\d{2})?$/.exec(clean(t));
+    if (!m || +m[1] > 24 || (m[2] && +m[2] > 59)) return "";
+    return String(+m[1] % 24).padStart(2, "0") + ":" + (m[2] || "00");
+  }
+
+  // files: the pictures/PDFs the viewer picked. Resolves with sign-in data like Logic.readWorkbook's.
+  async function read(files, opts) {
+    opts = opts || {};
+    var status = opts.onStatus || function () {};
+    var sample = await samplePromise;
+    if (!sample) throw { code: "unavailable" };
+    var lim = await sample.limits().catch(function () { return null; });
+    if (!lim || !lim.images) throw { code: "images_unavailable" };
+
+    status("Getting the scan ready…");
+    var pages = [];
+    for (var i = 0; i < files.length && pages.length < MAX_PAGES; i++)
+      pages = pages.concat(isPdf(files[i]) ? await pdfPages(files[i]) : [await imagePage(files[i])]);
+    pages = pages.slice(0, MAX_PAGES);
+    if (pages.length > lim.images.maxCount) throw { code: "too_many_pages", max: lim.images.maxCount };
+    var strips = pages.length * (1 + STRIPS) <= lim.images.maxCount;
+    var blobs = [], previews = [];
+    for (var p = 0; p < pages.length; p++) {
+      var full = await jpeg(pages[p], 0, 1);
+      blobs.push(full); previews.push(URL.createObjectURL(full));
+      if (strips) for (var k = 0; k < STRIPS; k++)
+        blobs.push(await jpeg(pages[p], Math.max(0, k / STRIPS - OVERLAP), Math.min(1, (k + 1) / STRIPS + OVERLAP)));
+    }
+    if (opts.signal && opts.signal.aborted) throw { code: "cancelled" };
+
+    status("Claude is reading the handwriting on " + pages.length + (pages.length === 1 ? " page" : " pages") + ". This usually takes under a minute…");
+    var res = await sample.json(prompt(pages.length, strips), { images: blobs, modelTier: "complex", signal: opts.signal });
+    var rows = (res && Array.isArray(res.rows) ? res.rows : []).filter(function (r) { return r && clean(r.name); });
+    // Strips overlap: drop a line read twice
+    var seen = {};
+    rows = rows.filter(function (r) {
+      var k = [clean(r.line), clean(r.name).toLowerCase(), hhmm(r.timeIn), hhmm(r.timeOut)].join("|");
+      if (seen[k]) return false; seen[k] = 1; return true;
+    });
+    if (!rows.length) throw { code: "no_rows" };
+
+    var aoa = [["Line", "Full Name (PRINT)", "ID #/Position", "Time In", "Signed in", "Time Out", "Signed out", "Activity ID", "Hard to read"]];
+    var unsigned = [], unclear = [];
+    rows.forEach(function (r, i) {
+      var line = clean(r.line) || String(i + 1), tin = hhmm(r.timeIn), tout = hhmm(r.timeOut);
+      var sIn = tin ? (r.signedIn === false ? "no signature" : "✓") : "", sOut = tout ? (r.signedOut === false ? "no signature" : "✓") : "";
+      aoa.push([line, clean(r.name), clean(r.idPosition), tin, sIn, tout, sOut, clean(r.activity), clean(r.unclear)]);
+      var miss = [];
+      if (tin && r.signedIn === false) miss.push("in"); if (tout && r.signedOut === false) miss.push("out");
+      if (miss.length) unsigned.push("Line " + line + " " + clean(r.name) + ": no signature for time " + miss.join(" or "));
+      if (clean(r.unclear)) unclear.push("Line " + line + " " + clean(r.name) + ": " + clean(r.unclear));
+    });
+    var data = Logic.readRows(aoa, "Scan");
+    if (!data) throw { code: "no_rows" };
+    data.date = /^\d{4}-\d{2}-\d{2}$/.test(clean(res.date)) ? clean(res.date) : null;
+    data.scan = { pages: previews, unsigned: unsigned, unclear: unclear, shift: res.shift === "N" ? "N" : res.shift === "D" ? "D" : null };
+    data.file = files.map(function (f) { return f.name; }).join(", ");
+    return data;
+  }
+
+  // Line number a scanned row was given, for "line 7" references
+  function lineOf(data, loc) {
+    var g = data.grids[0], d = g && g.data.find(function (x) { return x.r === loc.r; });
+    return d ? d.cells[0] : loc.xr;
+  }
+
+  function errorText(e) {
+    switch (e && e.code) {
+      case "unavailable": return "Reading a scan needs this page open in claude.ai. Here you can still use the Excel sign-in.";
+      case "images_unavailable": return "This view can't send pictures to Claude, so the scan can't be read here. Open the page in claude.ai, or use the Excel sign-in.";
+      case "not_granted": return "The scan wasn't read because Claude wasn't allowed for this page. Reload the page to be asked again.";
+      case "sampling_disabled": return "Claude isn't available on this account, so the scan can't be read.";
+      case "rate_limited": return "Claude is busy or you've reached your usage limit. Try the scan again in a few minutes.";
+      case "session_expired": return "Sign in to claude.ai again, then drop the scan again.";
+      case "image_rejected": case "image_unreadable": return "That picture couldn't be opened. Use a JPG, PNG or PDF under 20 MB.";
+      case "pdf_unavailable": return "The PDF reader didn't load. Check the connection, or take a photo of the sheet instead.";
+      case "too_many_pages": return "That's more pages than can be read at once (" + e.max + "). Drop fewer pages at a time.";
+      case "no_rows": case "invalid_json": case "empty_completion": case "refused":
+        return "No sign-in lines could be read from that picture. Try a straighter, brighter photo with the whole sheet in view.";
+      default: return "Couldn't read the scan just now. Try again.";
+    }
+  }
+
+  return { isPicture: isPicture, read: read, lineOf: lineOf, errorText: errorText };
+})();
+</script>
 <script>
 // ---------- UI ----------
 (function () {
@@ -1148,6 +1335,7 @@ var Importer = (function () {
     return null;
   }
   function ref(data, loc, cols) {
+    if (data.scan) return "line " + Scan.lineOf(data, loc);
     var gi = gridFor(data, loc.sheet);
     var letters = cols.map(function (c) { return gi.g.colLetter(c) + loc.xr; });
     return letters.join(", ");
@@ -1160,11 +1348,34 @@ var Importer = (function () {
     $("notices").appendChild(d);
   }
 
+  // A scanned sign-in is read by Claude; Excel files are read here
+  var reading = null;
+  async function readScan(pics) {
+    if (reading) reading.ctl.abort();
+    var me = reading = { ctl: new AbortController(), text: "Getting the scan ready…" };
+    render();
+    try {
+      var data = await Scan.read(pics, { signal: me.ctl.signal, onStatus: function (t) { if (reading === me) { me.text = t; render(); } } });
+      if (reading === me) state.signin = data;
+    } catch (e) {
+      if (reading === me && !(e && e.code === "cancelled")) state.errors = (state.errors || []).concat(Scan.errorText(e));
+    }
+    if (reading === me) { reading = null; render(); }
+  }
+  $("notices").addEventListener("click", function (e) {
+    if (e.target.closest("[data-stop]") && reading) { reading.ctl.abort(); reading = null; render(); }
+  });
+
   function handleFiles(files) {
     if (!files || !files.length) return;
     if (state.example) { state.example = false; state.signin = null; state.lem = null; }
+    files = Array.prototype.slice.call(files);
+    var pics = files.filter(Scan.isPicture);
+    files = files.filter(function (f) { return !Scan.isPicture(f); });
+    if (pics.length) readScan(pics);
+    if (!files.length) { render(); return; }
     var pending = files.length;
-    Array.prototype.forEach.call(files, function (f) {
+    files.forEach(function (f) {
       var fr = new FileReader();
       fr.onload = function () {
         try {
@@ -1203,9 +1414,10 @@ var Importer = (function () {
     try { localStorage.setItem("lemcheck.break", $("break").value); } catch (e) {}
     render();
   });
-  $("clear").addEventListener("click", function () { state = { signin: null, lem: null, example: false }; render(); });
+  $("clear").addEventListener("click", function () { if (reading) reading.ctl.abort(); reading = null; state = { signin: null, lem: null, example: false }; render(); });
 
   // "Sign-in row 13" links in the person view jump to that row in the sheet view
+  $("signin-scan").addEventListener("click", function (e) { if (e.target.tagName === "IMG") e.target.classList.toggle("big"); });
   $("rows").addEventListener("click", function (e) {
     var a = e.target.closest("a[data-row]");
     if (!a) return;
@@ -1240,7 +1452,7 @@ var Importer = (function () {
     el.classList.toggle("loaded", !!data); el.classList.toggle("empty", !data);
     el.querySelector(".slot-file").textContent = data ? data.file : "Not loaded";
     var meta = "";
-    if (data) meta = data.people.length + " names" + (data.date ? " · " + data.date : "") + (data.sheets && data.sheets.length > 1 ? " · tabs: " + data.sheets.join(", ") : "");
+    if (data) meta = data.people.length + " names" + (data.date ? " · " + data.date : "") + (data.scan ? " · read from " + data.scan.pages.length + (data.scan.pages.length === 1 ? " page" : " pages") : data.sheets && data.sheets.length > 1 ? " · tabs: " + data.sheets.join(", ") : "");
     el.querySelector(".slot-meta").textContent = meta;
   }
 
@@ -1298,15 +1510,21 @@ var Importer = (function () {
   function renderGrid(kind, data, gi, marks, only) {
     var g = data.grids[gi];
     var extra = kind === "signin" ? ["Hrs", "LEM"] : ["Sign-in"];
-    var h = '<div class="xl"><table><thead><tr class="letters"><th></th>';
-    g.cols.forEach(function (c) { h += "<th>" + g.colLetter(c) + "</th>"; });
-    extra.forEach(function (x, i) { h += '<th class="' + (i === 0 ? "check" : "") + '"></th>'; });
-    h += '</tr><tr><th class="rn">' + g.headerXr + "</th>";
-    g.cols.forEach(function (c) { h += "<th>" + esc(String(g.header[c] == null ? "" : g.header[c]).trim()) + "</th>"; });
+    // A scan has numbered lines, not Excel rows and columns: its line number goes where the row number would
+    var scan = !!data.scan, cols = scan ? g.cols.filter(function (c) { return c !== 0; }) : g.cols;
+    var h = '<div class="xl"><table><thead>';
+    if (!scan) {
+      h += '<tr class="letters"><th></th>';
+      cols.forEach(function (c) { h += "<th>" + g.colLetter(c) + "</th>"; });
+      extra.forEach(function (x, i) { h += '<th class="' + (i === 0 ? "check" : "") + '"></th>'; });
+      h += "</tr>";
+    }
+    h += '<tr><th class="rn">' + (scan ? "Line" : g.headerXr) + "</th>";
+    cols.forEach(function (c) { h += "<th>" + esc(String(g.header[c] == null ? "" : g.header[c]).trim()) + "</th>"; });
     extra.forEach(function (x, i) { h += '<th class="' + (i === 0 ? "check" : "") + '">' + x + "</th>"; });
     h += "</tr></thead><tbody>";
     var shown = 0, blank = [];
-    var width = g.cols.length + 1 + extra.length;
+    var width = cols.length + 1 + extra.length;
     function flushBlank() {
       if (!blank.length) return;
       if (!only) h += '<tr class="blank"><td class="rn">' + blank[0] + (blank.length > 1 ? "–" + blank[blank.length - 1] : "") + '</td><td colspan="' + (width - 1) + '">' + (blank.length > 1 ? blank.length + " empty rows" : "Empty row") + "</td></tr>";
@@ -1321,14 +1539,15 @@ var Importer = (function () {
       flushBlank();
       shown++;
       var cls = isTotal ? "x-total" : m ? "x-" + m.status : "";
-      h += '<tr id="x-' + kind + "-" + gi + "-" + d.r + '" class="' + cls + '"><td class="rn">' + d.xr + "</td>";
-      g.cols.forEach(function (c) {
+      h += '<tr id="x-' + kind + "-" + gi + "-" + d.r + '" class="' + cls + '"><td class="rn">' + esc(scan ? d.cells[0] : d.xr) + "</td>";
+      cols.forEach(function (c) {
         var v = d.cells[c], t = cellText(v, c, g);
         var cc = [];
         if (typeof v === "number" || g.timeCols.indexOf(c) >= 0) cc.push("n");
         if (m && m.hit.indexOf(c) >= 0) cc.push("hit");
         else if (m && m.warn.indexOf(c) >= 0) cc.push("hit-warn");
-        h += '<td class="' + cc.join(" ") + '" title="' + g.colLetter(c) + d.xr + '">' + esc(t) + "</td>";
+        if (scan && /^no signature$/.test(t)) cc.push("hit-warn");
+        h += '<td class="' + cc.join(" ") + '"' + (scan ? "" : ' title="' + g.colLetter(c) + d.xr + '"') + ">" + esc(t) + "</td>";
       });
       if (kind === "signin") {
         var p = m ? state.signin.people.find(function (x) { return x.locs[0].r === d.r && x.locs[0].sheet === g.sheet; }) : null;
@@ -1351,12 +1570,19 @@ var Importer = (function () {
     slot("slot-signin", state.signin); slot("slot-lem", state.lem);
     (state.errors || []).forEach(function (m) { notice("err", esc(m)); });
     state.errors = [];
+    if (reading) notice("example", esc(reading.text) + '<button class="btn" type="button" data-stop>Stop</button>');
+    var sc = state.signin && state.signin.scan;
+    if (sc) {
+      notice("warn", "The sign-in was read from a scan. Check the names and times against the picture under “Daily sign-in” before you rely on them." +
+        (sc.unclear.length ? "<br><b>Hard to read:</b><ul>" + sc.unclear.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + "</ul>" : ""));
+      if (sc.unsigned.length) notice("err", "<b>Missing signatures on the scan:</b><ul>" + sc.unsigned.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + "</ul>");
+    }
     if (state.example) notice("example", "<b>Example data.</b> These names are made up to show how the check works. Drop your sign-in sheet and LEM above to check your real hours.");
 
     var results = $("results");
     if (!state.signin || !state.lem) {
       results.hidden = true;
-      if (state.signin || state.lem) notice("warn", "Now add the " + (state.signin ? "LEM report" : "daily sign-in sheet") + ".");
+      if ((state.signin || state.lem) && !reading) notice("warn", "Now add the " + (state.signin ? "LEM report" : "daily sign-in sheet") + ".");
       return;
     }
     results.hidden = false;
@@ -1390,6 +1616,9 @@ var Importer = (function () {
 
     // Sheet view
     $("signin-file").textContent = state.signin.file || "";
+    $("signin-scan").innerHTML = state.signin.scan ? state.signin.scan.pages.map(function (u, i) {
+      return '<img src="' + esc(u) + '" alt="Scanned sign-in, page ' + (i + 1) + '" title="Click to enlarge">';
+    }).join("") : "";
     $("lem-file").textContent = state.lem.file || "";
     $("signin-grids").innerHTML = state.signin.grids.map(function (g, i) {
       return (state.signin.grids.length > 1 ? '<div class="tabname">Tab: ' + esc(g.sheet) + "</div>" : "") + renderGrid("signin", state.signin, i, marks, only);
@@ -1407,8 +1636,8 @@ var Importer = (function () {
       var whereTxt = [], whereHtml = [];
       if (s) {
         var sc = r.status === "bad" && l ? s.locs[0].hoursCols : [s.locs[0].nameCol];
-        whereTxt.push("Sign-in " + ref(state.signin, s.locs[0], sc));
-        whereHtml.push('<a href="#" data-row="' + rowId("signin", state.signin, s.locs[0]) + '">Sign-in row ' + s.locs[0].xr + "</a>");
+        whereTxt.push("Sign-in " + (state.signin.scan ? "scan " : "") + ref(state.signin, s.locs[0], sc));
+        whereHtml.push('<a href="#" data-row="' + rowId("signin", state.signin, s.locs[0]) + '">Sign-in ' + (state.signin.scan ? "scan " + ref(state.signin, s.locs[0]) : "row " + s.locs[0].xr) + "</a>");
       }
       if (l) l.locs.forEach(function (loc) {
         var lc = r.status === "bad" && s ? loc.hoursCols : [loc.nameCol];
@@ -1685,10 +1914,65 @@ var Store = (function () {
   function readFile(f) {
     return new Promise(function (res, rej) { var fr = new FileReader(); fr.onload = function () { res(fr.result); }; fr.onerror = rej; fr.readAsArrayBuffer(f); });
   }
+  var scanning = null;
+  function scanStatus(text, me) {
+    var box = $("fill-notices"), d = document.createElement("div");
+    d.className = "notice example"; d.textContent = text;
+    var b = document.createElement("button"); b.className = "btn"; b.type = "button"; b.textContent = "Stop";
+    b.addEventListener("click", function () { me.abort(); scanning = null; box.innerHTML = ""; });
+    d.appendChild(b); box.innerHTML = ""; box.appendChild(d);
+  }
+  function addList(title, items) {
+    var d = $("fill-notices").firstChild;
+    if (!d || !items.length) return;
+    var b = document.createElement("div"), ul = document.createElement("ul");
+    b.style.marginTop = "6px"; b.textContent = title;
+    items.forEach(function (t) { var li = document.createElement("li"); li.textContent = t; ul.appendChild(li); });
+    b.appendChild(ul); d.appendChild(b);
+  }
+
+  // Today's scanned sign-in onto the crew already on screen: times come from the scan, everything else stays
+  function mergeScan(scan) {
+    var crewP = day.crew.map(function (p) { return { nm: Logic.splitName(p.name), ref: p }; });
+    var n = { updated: 0, added: 0, cleared: 0, spelled: [] };
+    Logic.match(scan.people, crewP).forEach(function (pr) {
+      var s = pr.s, p = pr.l && pr.l.ref;
+      if (s && p) {
+        p.tin = Importer.hhmm(s.tin); p.tout = Importer.hhmm(s.tout);
+        var fresh = Importer.fromFiles({ people: [s] }, null).crew[0];
+        if (!p.empId) p.empId = fresh.empId;
+        if (!p.position) p.position = fresh.position;
+        if (!p.activity) p.activity = fresh.activity;
+        if (pr.nameNote) n.spelled.push(p.name + " (scan: " + s.raw + ")");
+        n.updated++;
+      } else if (s) {
+        day.crew.push(Importer.fromFiles({ people: [s] }, null).crew[0]); n.added++;
+      } else if (p && (p.tin || p.tout)) {
+        p.tin = ""; p.tout = ""; n.cleared++;
+      }
+    });
+    return n;
+  }
+
   async function importFiles(files) {
     if (!files || !files.length) return;
     files = Array.prototype.slice.call(files);   // the input's live list empties when it is reset
-    var found = { signin: null, lem: null }, bad = [];
+    var pics = files.filter(Scan.isPicture);
+    files = files.filter(function (f) { return !Scan.isPicture(f); });
+    var found = { signin: null, lem: null }, bad = [], scan = null;
+    if (pics.length) {
+      if (scanning) scanning.abort();
+      var me = scanning = new AbortController();
+      try {
+        scan = await Scan.read(pics, { signal: me.signal, onStatus: function (t) { if (scanning === me) scanStatus(t, me); } });
+      } catch (e) {
+        if (scanning === me && !(e && e.code === "cancelled")) fillNotice("err", Scan.errorText(e));
+        if (scanning === me) scanning = null;
+        return;
+      }
+      if (scanning !== me) return;
+      scanning = null;
+    }
     for (var i = 0; i < files.length; i++) {
       var f = files[i];
       try {
@@ -1698,24 +1982,38 @@ var Store = (function () {
         else bad.push(f.name);
       } catch (e) { bad.push(f.name); }
     }
-    if (!found.signin && !found.lem) { fillNotice("err", (bad.join(", ") || "That file") + " isn't a sign-in sheet or a LEM this page can read."); return; }
-    var imp = Importer.fromFiles(found.signin && found.signin.data, found.lem && found.lem.data);
+    if (!scan && !found.signin && !found.lem) { fillNotice("err", (bad.join(", ") || "That file") + " isn't a sign-in sheet or a LEM this page can read."); return; }
     undoDay = JSON.parse(JSON.stringify(day));
-    day.crew = imp.crew;
-    if (found.lem) day.equipment = imp.equipment;
     ticked = {};
     $("undo-btn").hidden = false;
-    var kept = [];
+    var msg;
+    if (scan && !found.lem && day.crew.length) {
+      var n = mergeScan(scan);
+      msg = "Took the times for " + n.updated + (n.updated === 1 ? " person" : " people") + " from the scan" +
+        (n.added ? ", added " + n.added + (n.added === 1 ? " person who wasn't" : " people who weren't") + " on the crew" : "") +
+        (n.cleared ? ", and cleared the times of " + n.cleared + (n.cleared === 1 ? " person who isn't" : " people who aren't") + " on it" : "") + ". Check them against the scan.";
+    } else {
+      var imp = Importer.fromFiles(scan || (found.signin && found.signin.data), found.lem && found.lem.data);
+      day.crew = imp.crew;
+      if (found.lem) day.equipment = imp.equipment;
+      var from = [scan ? "the scanned sign-in" : found.signin ? "sign-in" : null, found.lem ? "LEM" : null].filter(Boolean);
+      msg = "Filled in " + day.crew.length + " people" + (found.lem ? " and " + day.equipment.length + " pieces of equipment" : "") +
+        " from " + from.join(" and ") + (imp.date ? " (" + niceDate(imp.date) + ")" : "") + ". The date is still " + niceDate(day.date) + ".";
+      if (scan) msg += " Check the times against the scan.";
+      else if (!found.signin || !found.lem) msg += " Drop the " + (found.signin ? "LEM" : "sign-in") + " too so its layout is used.";
+    }
+    if (scan && scan.date && scan.date !== day.date) msg += " The scan is dated " + niceDate(scan.date) + ".";
     for (var k in found) {
       if (!found[k]) continue;
       templates[k] = { name: found[k].name, bytes: found[k].bytes };
-      kept.push(k === "signin" ? "sign-in" : "LEM");
       try { await saveTemplate(k, found[k].name, found[k].bytes); } catch (e) {}
     }
-    var msg = "Filled in " + day.crew.length + " people" + (found.lem ? " and " + day.equipment.length + " pieces of equipment" : "") +
-      " from " + kept.join(" and ") + (imp.date ? " (" + niceDate(imp.date) + ")" : "") + ". The date is still " + niceDate(day.date) + ".";
-    if (!found.signin || !found.lem) msg += " Drop the " + (found.signin ? "LEM" : "sign-in") + " too so its layout is used.";
     fillNotice("ok", msg);
+    if (scan) {
+      addList("Missing signatures on the scan:", scan.scan.unsigned);
+      addList("Hard to read, check these:", scan.scan.unclear);
+      if (n) addList("Spelled differently on the scan (your spelling kept):", n.spelled);
+    }
     renderAll(); renderLayout(); scheduleSave();
   }
 
