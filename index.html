@@ -163,6 +163,15 @@ tr.st-idle .name { font-weight: 500; }
 .tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .fill { display: grid; gap: 16px; }
 .daybar { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; }
+.date-quick { display: flex; gap: 6px; }
+.stat-box { display: flex; align-items: center; gap: 6px; font-size: 14px; padding-bottom: 8px; cursor: pointer; }
+.lem-for { font-family: var(--display); font-size: 22px; font-weight: 600; line-height: 1.2; }
+.lem-for .rate { display: inline-block; font-family: var(--body); font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--muted); vertical-align: middle; margin-left: 8px; }
+.lem-for .rate.hot { border-color: var(--accent); color: var(--ink); }
+.rules-body { flex-direction: column; }
+.rules-body input.code-in { width: 15em; font-family: var(--mono); }
+.rules-line b { color: var(--ink); font-weight: 600; margin-right: 4px; }
+.date-quick .btn { padding: 7px 10px; }
 .field { display: grid; gap: 4px; font-size: 12px; color: var(--muted); font-family: var(--mono); letter-spacing: .06em; text-transform: uppercase; }
 .field input, .field select { font: inherit; font-family: var(--body); font-size: 15px; letter-spacing: 0; text-transform: none; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; }
 .save-state { font-size: 13px; color: var(--muted); padding-bottom: 8px; }
@@ -204,6 +213,10 @@ tr.st-idle .name { font-weight: 500; }
 .form-table tr.off input, .form-table tr.off select { color: var(--muted); }
 .form-table tr.bad td { background: var(--bad-soft); }
 .row-tools { white-space: nowrap; display: flex; gap: 2px; }
+.hrs-tools { display: flex; align-items: center; justify-content: flex-end; gap: 2px; white-space: nowrap; }
+.hrs-tools .hv { min-width: 3.2em; text-align: right; }
+.hrs-tools .hv.off { color: var(--idle); }
+.hrs-tools .icon { padding: 2px 5px; font-family: var(--mono); }
 .icon { font: inherit; font-size: 13px; border: 1px solid transparent; background: none; color: var(--muted); border-radius: 4px; padding: 2px 6px; cursor: pointer; }
 .icon:hover { border-color: var(--line); color: var(--ink); }
 .icon:focus-visible { outline: 2px solid var(--accent); }
@@ -248,10 +261,13 @@ tr.st-idle .name { font-weight: 500; }
   <section id="tab-fill" class="fill">
     <div class="daybar">
       <label class="field" for="f-date"><span>Date</span><input type="date" id="f-date"></label>
+      <div class="date-quick"><button class="btn" type="button" id="date-yday">Yesterday</button><button class="btn" type="button" id="date-today">Today</button></div>
       <label class="field" for="f-shift"><span>Shift</span>
         <select id="f-shift"><option value="D">Day (D)</option><option value="N">Night (N)</option></select></label>
+      <label class="stat-box" for="f-stat"><input type="checkbox" id="f-stat"> Stat holiday</label>
       <div class="save-state" id="save-state" aria-live="polite"></div>
     </div>
+    <div class="lem-for" id="lem-for" aria-live="polite"></div>
 
     <div class="start" id="start">
       <div class="start-copy">
@@ -259,13 +275,13 @@ tr.st-idle .name { font-weight: 500; }
         <div class="start-row">
           <select id="copy-from" aria-label="Saved day to copy"></select>
           <button class="btn primary" id="copy-btn" type="button">Copy into this day</button>
-          <button class="btn" id="undo-btn" type="button" hidden>Undo copy</button>
+          <button class="btn" id="undo-btn" type="button" hidden>Undo</button>
         </div>
         <div class="hint" id="copy-hint">Copies everyone, their times and the equipment. Then change what's different today.</div>
       </div>
       <div class="drop small" id="fill-drop" tabindex="0" role="button" aria-label="Choose or drop Excel files or a scanned sign-in">
-        <div class="start-title">Or drop a scanned sign-in, or yesterday's files</div>
-        <div class="hint">A photo or PDF of today's signed sheet fills in everyone's times. Yesterday's Excel sign-in and LEM fill the form and keep their layout for the files you download.</div>
+        <div class="start-title">Or drop a scanned sign-in, or the sign-in and LEM files</div>
+        <div class="hint">A photo or PDF of the signed sheet fills in everyone's times. Excel files fill the form and keep their layout for the files you download. If the crew already has people, only the new workers are added.</div>
         <input type="file" id="fill-file" accept=".xlsx,.xlsm,.pdf,image/*" multiple hidden>
       </div>
     </div>
@@ -311,8 +327,12 @@ tr.st-idle .name { font-weight: 500; }
     <details class="rules" id="rules">
       <summary>Hours rules</summary>
       <div class="rules-body">
-        <label for="r-st">Straight time up to <input type="number" id="r-st" min="0" step="0.5" value="8"> hrs</label>
-        <label for="r-ot">Overtime up to <input type="number" id="r-ot" min="0" step="0.5" value="11"> hrs, double time after</label>
+        <div class="rules-line"><b>Weekdays</b> <label for="r-st">straight time up to <input type="number" id="r-st" min="0" step="0.5" value="8"> hrs,</label> <label for="r-ot">overtime up to <input type="number" id="r-ot" min="0" step="0.5" value="11"> hrs, double time after</label></div>
+        <div class="rules-line"><b>Saturdays</b> <label for="r-sat">overtime up to <input type="number" id="r-sat" min="0" step="0.5" value="11"> hrs, double time after</label></div>
+        <div class="rules-line"><b>Sundays and stat holidays</b> all double time. Tick “Stat holiday” beside the date for a stat.</div>
+        <div class="rules-line"><b>Default codes</b> given to anyone with hours who has no code yet (Activity ID on the sign-in, cost code on the LEM).
+          <label for="c-trades">Trades <input type="text" id="c-trades" class="code-in"></label>
+          <label for="c-staff">Staff <input type="text" id="c-staff" class="code-in"></label></div>
         <label for="r-break">Unpaid break taken off LEM hours <input type="number" id="r-break" min="0" step="0.25" value="0"> hrs</label>
       </div>
     </details>
@@ -405,6 +425,7 @@ tr.st-idle .name { font-weight: 500; }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script id="logic">
 // ---------- Parsing & matching (no DOM) ----------
 var Logic = (function () {
@@ -851,7 +872,15 @@ var Builder = (function () {
     return Math.round(h * 100) / 100;
   }
   function toMin(t) { var m = /^(\d{1,2}):(\d{2})/.exec(t || ""); return m ? +m[1] * 60 + +m[2] : null; }
-  function split(h, rule) {
+  // Weekday: ST, then OT, then DT. Saturday: OT up to satOt, DT after. Sunday and stat holidays: all DT.
+  function dayKind(day) {
+    if (day.stat) return "stat";
+    var p = (day.date || "").split("-"), wd = p.length === 3 ? new Date(+p[0], +p[1] - 1, +p[2]).getDay() : -1;
+    return wd === 0 ? "sun" : wd === 6 ? "sat" : "week";
+  }
+  function split(h, rule, kind) {
+    if (kind === "sun" || kind === "stat") return { st: 0, ot: 0, dt: r2(h) };
+    if (kind === "sat") { var so = rule.satOt == null ? 11 : rule.satOt; return { st: 0, ot: r2(Math.min(h, so)), dt: r2(Math.max(h - so, 0)) }; }
     var stMax = rule.stMax, otMax = rule.otMax;
     var st = Math.min(h, stMax), ot = Math.min(Math.max(h - stMax, 0), Math.max(otMax - stMax, 0)), dt = Math.max(h - Math.max(otMax, stMax), 0);
     return { st: r2(st), ot: r2(ot), dt: r2(dt) };
@@ -872,13 +901,6 @@ var Builder = (function () {
     var rows = slots(ws, h.row);
     var crew = day.crew;
     if (crew.length > rows.length) throw new Error("The sign-in sheet has " + rows.length + " rows but the crew has " + crew.length + " people.");
-    // Drop yesterday's handwritten signatures (pictures inside the table), keep logos above it
-    var last = rows.length ? rows[rows.length - 1] : h.row;
-    if (ws._media) ws._media = ws._media.filter(function (m) {
-      var tl = m.range && m.range.tl; if (!tl) return true;
-      var r1 = (tl.nativeRow != null ? tl.nativeRow : Math.floor(tl.row || 0)) + 1;
-      return !(r1 >= h.row && r1 <= last + 1);
-    });
     rows.forEach(function (r, i) {
       var p = crew[i];
       [h.n, h.role, h.tin, h.tout, h.act].concat(h.sig).forEach(function (c) { put(ws, r, c, null); });
@@ -892,7 +914,7 @@ var Builder = (function () {
         cell.value = m / 1440;
         if (!/h/i.test(cell.numFmt || "")) cell.numFmt = "h:mm";
       });
-      put(ws, r, h.act, p.activity);
+      if (hoursOf(p, 0)) put(ws, r, h.act, p.activity);
     });
     setHeaderFields(ws, day);
     return ws.name;
@@ -957,7 +979,7 @@ var Builder = (function () {
         var p = assign[r];
         [t.n, t.role, t.st, t.ot, t.dt, t.delay, t.cwp, t.cost, t.sub].forEach(function (c) { put(ws2, r, c, null); });
         if (!p) { putResult(ws2, r, t.tot, 0); return; }
-        var hrs = hoursOf(p, brk), sp = split(hrs, settings);
+        var hrs = hoursOf(p, brk), sp = split(hrs, settings, dayKind(day));
         put(ws2, r, t.n, p.name); put(ws2, r, t.role, p.lemClass || p.position); put(ws2, r, t.sub, p.sub);
         if (t.shift > 0) put(ws2, r, t.shift, p.shift === "Night" ? "Night Shift" : "Day Shift");
         if (hrs) {
@@ -1049,6 +1071,116 @@ var Builder = (function () {
     return wb;
   }
 
+  // ExcelJS drops pen/ink signatures, shapes, grouped pictures and header/footer pictures when it saves.
+  // Put the template's own drawings back on each tab so sign-offs come through as they were.
+  var REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+  var AFTER_DRAWING = ["legacyDrawing", "legacyDrawingHF", "drawingHF", "picture", "oleObjects", "controls", "webPublishItems", "tableParts", "extLst"];
+  var AFTER_HF = ["drawingHF", "picture", "oleObjects", "controls", "webPublishItems", "tableParts", "extLst"];
+  function xmlAttr(tag, name) { var m = new RegExp("\\s" + name + '="([^"]*)"').exec(tag); return m ? m[1] : null; }
+  function relsPath(part) { var i = part.lastIndexOf("/"); return part.slice(0, i + 1) + "_rels/" + part.slice(i + 1) + ".rels"; }
+  function resolvePart(from, target) {
+    if (target.charAt(0) === "/") return target.slice(1);
+    var out = from.split("/").slice(0, -1);
+    target.split("/").forEach(function (seg) { if (seg === "..") out.pop(); else if (seg !== ".") out.push(seg); });
+    return out.join("/");
+  }
+  function relTarget(from, to) {
+    var a = from.split("/").slice(0, -1), b = to.split("/"), i = 0;
+    while (i < a.length && i < b.length - 1 && a[i] === b[i]) i++;
+    return a.slice(i).map(function () { return ".."; }).concat(b.slice(i)).join("/");
+  }
+  async function readRels(zip, part) {
+    var f = zip.file(relsPath(part)); if (!f) return [];
+    var x = await f.async("string"), out = [], re = /<Relationship\b[^>]*>/g, m;
+    while ((m = re.exec(x))) out.push({ id: xmlAttr(m[0], "Id"), type: xmlAttr(m[0], "Type"), target: xmlAttr(m[0], "Target"), external: xmlAttr(m[0], "TargetMode") === "External" });
+    return out;
+  }
+  async function sheetPaths(zip) {
+    var wbx = await zip.file("xl/workbook.xml").async("string"), rels = await readRels(zip, "xl/workbook.xml"), out = {}, re = /<sheet\b[^>]*>/g, m;
+    while ((m = re.exec(wbx))) {
+      var rid = /\br:id="([^"]*)"/.exec(m[0]) || /\s[\w]+:id="([^"]*)"/.exec(m[0]);
+      var rel = rid && rels.find(function (r) { return r.id === rid[1]; });
+      if (rel) out[xmlAttr(m[0], "name").replace(/&amp;/g, "&")] = resolvePart("xl/workbook.xml", rel.target);
+    }
+    return out;
+  }
+  function insertBefore(xml, tag, names) {
+    for (var i = 0; i < names.length; i++) {
+      var at = xml.search(new RegExp("<(\\w+:)?" + names[i] + "[\\s/>]"));
+      if (at >= 0) return xml.slice(0, at) + tag + xml.slice(at);
+    }
+    return xml.replace(/<\/(\w+:)?worksheet>\s*$/, function (end) { return tag + end; });
+  }
+  async function keepDrawings(outBuf, tplBytes) {
+    var tz = await JSZip.loadAsync(tplBytes), oz = await JSZip.loadAsync(outBuf);
+    var tSheets = await sheetPaths(tz), oSheets = await sheetPaths(oz);
+    var tCT = await tz.file("[Content_Types].xml").async("string"), oCT = await oz.file("[Content_Types].xml").async("string");
+    var copied = {}, n = 0;
+    function typeOf(part) {
+      var m = new RegExp('<Override[^>]*PartName="/' + part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + '"[^>]*>').exec(tCT);
+      return m ? xmlAttr(m[0], "ContentType") : null;
+    }
+    function ensureType(part, type) {
+      var ext = part.split(".").pop().toLowerCase();
+      if (type) { oCT = oCT.replace("</Types>", '<Override PartName="/' + part + '" ContentType="' + type + '"/></Types>'); return; }
+      if (new RegExp('<Default[^>]*Extension="' + ext + '"', "i").test(oCT)) return;
+      var d = new RegExp('<Default[^>]*Extension="' + ext + '"[^>]*>', "i").exec(tCT);
+      if (d) oCT = oCT.replace("</Types>", d[0].replace(/\/?>$/, "/>") + "</Types>");
+    }
+    async function copyPart(src) {
+      if (copied[src]) return copied[src];
+      var f = tz.file(src); if (!f) return null;
+      var slash = src.lastIndexOf("/"), dest = src.slice(0, slash + 1) + "kept" + (++n) + "_" + src.slice(slash + 1);
+      copied[src] = dest;
+      oz.file(dest, await f.async("uint8array"));
+      ensureType(dest, typeOf(src));
+      var rels = await readRels(tz, src);
+      if (rels.length) {
+        var x = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
+        for (var i = 0; i < rels.length; i++) {
+          var r = rels[i], tgt = r.target;
+          if (!r.external) { var d = await copyPart(resolvePart(src, r.target)); if (d) tgt = relTarget(dest, d); }
+          x += '<Relationship Id="' + r.id + '" Type="' + r.type + '" Target="' + tgt + '"' + (r.external ? ' TargetMode="External"' : "") + "/>";
+        }
+        oz.file(relsPath(dest), x + "</Relationships>");
+      }
+      return dest;
+    }
+    for (var name in tSheets) {
+      var tPath = tSheets[name], oPath = oSheets[name];
+      if (!oPath || !tz.file(tPath) || !oz.file(oPath)) continue;
+      var tXml = await tz.file(tPath).async("string"), tRels = await readRels(tz, tPath);
+      var oXml = await oz.file(oPath).async("string"), oRelFile = oz.file(relsPath(oPath));
+      var oRels = oRelFile ? await oRelFile.async("string") : '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>';
+      var changed = false;
+      for (var k = 0; k < 2; k++) {
+        var el = k === 0 ? "drawing" : "legacyDrawingHF", after = k === 0 ? AFTER_DRAWING : AFTER_HF;
+        var tm = new RegExp("<(\\w+:)?" + el + "\\b[^>]*/>").exec(tXml); if (!tm) continue;
+        var rid = /:id="([^"]*)"/.exec(tm[0]), rel = rid && tRels.find(function (r) { return r.id === rid[1]; });
+        if (!rel) continue;
+        var dest = await copyPart(resolvePart(tPath, rel.target)); if (!dest) continue;
+        var newId = "rIdKept" + k;
+        var om = new RegExp("<(\\w+:)?" + el + "\\b[^>]*/>").exec(oXml);
+        if (om) {
+          // Drop ExcelJS's own copy of this drawing so the tab has just one
+          oXml = oXml.replace(om[0], "");
+          var oid = /:id="([^"]*)"/.exec(om[0]);
+          if (oid) oRels = oRels.replace(new RegExp('<Relationship\\b[^>]*\\bId="' + oid[1] + '"[^>]*/>'), function (r) {
+            var old = resolvePart(oPath, xmlAttr(r, "Target"));
+            if (!/\/kept\d+_/.test(old)) { oz.remove(old); oz.remove(relsPath(old)); oCT = oCT.replace(new RegExp('<Override[^>]*PartName="/' + old + '"[^>]*/>'), ""); }
+            return "";
+          });
+        }
+        oRels = oRels.replace("</Relationships>", '<Relationship Id="' + newId + '" Type="' + rel.type + '" Target="' + relTarget(oPath, dest) + '"/></Relationships>');
+        oXml = insertBefore(oXml, "<" + el + ' xmlns:r="' + REL_NS + '" r:id="' + newId + '"/>', after);
+        changed = true;
+      }
+      if (changed) { oz.file(oPath, oXml); oz.file(relsPath(oPath), oRels); }
+    }
+    oz.file("[Content_Types].xml", oCT);
+    return oz.generateAsync({ type: "arraybuffer", compression: "DEFLATE" });
+  }
+
   function fileName(tplName, iso, fallback) {
     if (!tplName) return fallback;
     var p = iso.split("-");
@@ -1077,6 +1209,9 @@ var Builder = (function () {
     wb.calcProperties = wb.calcProperties || {};
     wb.calcProperties.fullCalcOnLoad = true;
     var buf = await wb.xlsx.writeBuffer();
+    if (tpl && tpl.bytes && window.JSZip) {
+      try { buf = await keepDrawings(buf, tpl.bytes); } catch (e) { console.warn("Couldn't copy the template's drawings", e); }
+    }
     var p = day.date.split("-");
     var name = kind === "signin"
       ? fileName(tpl && tpl.name, day.date, p.join(".") + " - Daily Workforce Report.xlsx")
@@ -1084,7 +1219,7 @@ var Builder = (function () {
     return { buffer: buf, name: name };
   }
 
-  return { build: build, hoursOf: hoursOf, split: split, toMin: toMin };
+  return { build: build, hoursOf: hoursOf, split: split, toMin: toMin, dayKind: dayKind };
 })();
 
 
@@ -1103,8 +1238,13 @@ var Importer = (function () {
   }
   var uid = function () { return Math.random().toString(36).slice(2, 10); };
   function shiftOf(s) { return /night/i.test(s || "") ? "Night" : "Day"; }
+  function toMinutes(t) { var m = /^(\d{1,2}):(\d{2})/.exec(t || ""); return m ? +m[1] * 60 + +m[2] : null; }
 
-  function fromFiles(signin, lem) {
+  // opts: { breakHrs, startTime }. The LEM's hours win: if the sign-in times give a different
+  // number (or there are no times), time out is moved so the form shows what the LEM says.
+  function fromFiles(signin, lem, opts) {
+    opts = opts || {};
+    var fixes = [];
     var pairs = signin && lem ? Logic.match(signin.people, lem.people)
       : signin ? signin.people.map(function (s) { return { s: s, l: null }; })
       : lem.people.map(function (l) { return { s: null, l: l }; });
@@ -1124,11 +1264,23 @@ var Importer = (function () {
         activity: s ? s.activity || "" : "", cwp: l ? l.cwp || "" : "", cost: l ? l.cost || "" : "", sub: l ? l.sub || "" : "",
         lemOrder: l ? (l.kind === "trades" ? 1000 : 0) + l.order : null
       };
+    }).map(function (p, i) {
+      var l = pairs[i].l;
+      if (!l || !(l.hours > 0)) return p;
+      var brk = opts.breakHrs || 0, want = Math.round(l.hours * 60);
+      var a = p.tin ? toMinutes(p.tin) : null, b = p.tout ? toMinutes(p.tout) : null;
+      var span = a != null && b != null ? ((b - a) % 1440 + 1440) % 1440 : null;
+      var got = span == null ? null : Math.max(0, span - (span > 0 ? brk * 60 : 0));
+      if (got != null && Math.abs(got - want) < 1) return p;
+      if (a == null) { a = toMinutes(opts.startTime) || 360; p.tin = hhmm(a / 60); }
+      p.tout = hhmm((a + want + brk * 60) / 60);
+      fixes.push({ name: p.name, signin: got == null ? null : got / 60, lem: l.hours });
+      return p;
     });
     var equipment = (lem && lem.equipment || []).map(function (q) {
       return { id: uid(), desc: q.desc, asset: q.asset, shift: shiftOf(q.shift), std: q.std || 0, standby: q.standby || 0, cwp: q.cwp, cost: q.cost };
     });
-    return { crew: crew, equipment: equipment, date: (signin && signin.date) || (lem && lem.date) || null };
+    return { crew: crew, equipment: equipment, fixes: fixes, date: (signin && signin.date) || (lem && lem.date) || null };
   }
   return { fromFiles: fromFiles, tidyName: tidyName, hhmm: hhmm, uid: uid };
 })();
@@ -1220,6 +1372,10 @@ var Scan = (function () {
     ].join("\n");
   }
 
+  function parseJson(text) {
+    var t = String(text || ""), a = t.indexOf("{"), b = t.lastIndexOf("}");
+    try { return JSON.parse(t.slice(a, b + 1)); } catch (e) { throw { code: "invalid_json" }; }
+  }
   function clean(t) { return String(t == null ? "" : t).replace(/\s+/g, " ").trim(); }
   function hhmm(t) {
     var m = /^(\d{1,2})[:.h]?(\d{2})?$/.exec(clean(t));
@@ -1233,7 +1389,8 @@ var Scan = (function () {
     var status = opts.onStatus || function () {};
     var sample = await samplePromise;
     if (!sample) throw { code: "unavailable" };
-    var lim = await sample.limits().catch(function () { return null; });
+    // Older viewer runtimes have no limits(); let the call itself say if pictures can't be sent
+    var lim = typeof sample.limits === "function" ? await sample.limits().catch(function () { return null; }) : { images: { maxCount: 5 } };
     if (!lim || !lim.images) throw { code: "images_unavailable" };
 
     status("Getting the scan ready…");
@@ -1253,7 +1410,9 @@ var Scan = (function () {
     if (opts.signal && opts.signal.aborted) throw { code: "cancelled" };
 
     status("Claude is reading the handwriting on " + pages.length + (pages.length === 1 ? " page" : " pages") + ". This usually takes under a minute…");
-    var res = await sample.json(prompt(pages.length, strips), { images: blobs, modelTier: "complex", signal: opts.signal });
+    var ask = { images: blobs, modelTier: "complex", signal: opts.signal };
+    var res = typeof sample.json === "function" ? await sample.json(prompt(pages.length, strips), ask)
+      : parseJson((await sample(prompt(pages.length, strips), ask)).text);
     var rows = (res && Array.isArray(res.rows) ? res.rows : []).filter(function (r) { return r && clean(r.name); });
     // Strips overlap: drop a line read twice
     var seen = {};
@@ -1775,7 +1934,9 @@ var Store = (function () {
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
-  function todayIso() { var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  // Most LEMs are done the morning after, so the form opens on yesterday
+  function isoOf(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function daysAgo(n) { var d = new Date(); d.setDate(d.getDate() - n); return isoOf(d); }
   function niceDate(iso) {
     if (!iso) return "";
     var p = iso.split("-"), d = new Date(+p[0], +p[1] - 1, +p[2]);
@@ -1784,8 +1945,8 @@ var Store = (function () {
   function fmt(h) { return (Math.round(h * 100) / 100).toString(); }
   var uid = Importer.uid;
 
-  var day = { date: todayIso(), shift: "D", crew: [], equipment: [] };
-  var settings = { stMax: 8, otMax: 11, breakHrs: 0 };
+  var day = { date: daysAgo(1), shift: "D", crew: [], equipment: [] };
+  var settings = { stMax: 8, otMax: 11, satOt: 11, breakHrs: 0, codes: { trades: "Maintenance", staff: "CWP-2200-C-1-001-SC10" }, roster: [] };
   var templates = { signin: null, lem: null };   // {name, bytes}
   var savedDays = [];
   var ticked = {};
@@ -1874,7 +2035,7 @@ var Store = (function () {
     sel.hidden = !has; $("copy-btn").hidden = !has;
     $("copy-title").textContent = has ? "Start from a saved day" : "No saved days yet";
     $("copy-hint").textContent = has ? "Copies everyone, their times and the equipment. Then change what's different today."
-      : "Each day you fill in here is saved. Tomorrow you can copy it and just change what's different. To start, drop yesterday's files or add people below.";
+      : "Each day you fill in here is saved. Tomorrow you can copy it and just change what's different. To start, drop the last files you sent or add people below. The date starts on yesterday, since most LEMs are for the day before.";
   }
   $("copy-btn").addEventListener("click", function () {
     var src = savedDays.find(function (d) { return d.date === $("copy-from").value; });
@@ -1894,6 +2055,9 @@ var Store = (function () {
     renderAll(); scheduleSave();
   });
 
+  // Same person if the names match ignoring case, spaces and punctuation
+  function personKey(name) { return Importer.tidyName(name).toLowerCase().replace(/[^a-z,]/g, ""); }
+  function equipKey(q) { return String(q.asset || q.desc || "").toLowerCase().replace(/\s+/g, " ").trim(); }
   function fillNotice(kind, text) {
     var d = document.createElement("div");
     d.className = "notice " + (kind === "ok" ? "example" : kind);
@@ -1914,6 +2078,7 @@ var Store = (function () {
   function readFile(f) {
     return new Promise(function (res, rej) { var fr = new FileReader(); fr.onload = function () { res(fr.result); }; fr.onerror = rej; fr.readAsArrayBuffer(f); });
   }
+  // ----- a scanned sign-in: Claude reads it (see Scan) -----
   var scanning = null;
   function scanStatus(text, me) {
     var box = $("fill-notices"), d = document.createElement("div");
@@ -1924,33 +2089,34 @@ var Store = (function () {
   }
   function addList(title, items) {
     var d = $("fill-notices").firstChild;
-    if (!d || !items.length) return;
+    if (!d || !items || !items.length) return;
     var b = document.createElement("div"), ul = document.createElement("ul");
     b.style.marginTop = "6px"; b.textContent = title;
     items.forEach(function (t) { var li = document.createElement("li"); li.textContent = t; ul.appendChild(li); });
     b.appendChild(ul); d.appendChild(b);
   }
-
-  // Today's scanned sign-in onto the crew already on screen: times come from the scan, everything else stays
+  // The scan onto the crew already on screen: times come from the scan, everything else stays
   function mergeScan(scan) {
     var crewP = day.crew.map(function (p) { return { nm: Logic.splitName(p.name), ref: p }; });
-    var n = { updated: 0, added: 0, cleared: 0, spelled: [] };
+    var n = { updated: 0, added: [], cleared: 0, spelled: [] };
     Logic.match(scan.people, crewP).forEach(function (pr) {
       var s = pr.s, p = pr.l && pr.l.ref;
       if (s && p) {
-        p.tin = Importer.hhmm(s.tin); p.tout = Importer.hhmm(s.tout);
         var fresh = Importer.fromFiles({ people: [s] }, null).crew[0];
+        p.tin = fresh.tin; p.tout = fresh.tout;
         if (!p.empId) p.empId = fresh.empId;
         if (!p.position) p.position = fresh.position;
         if (!p.activity) p.activity = fresh.activity;
         if (pr.nameNote) n.spelled.push(p.name + " (scan: " + s.raw + ")");
         n.updated++;
       } else if (s) {
-        day.crew.push(Importer.fromFiles({ people: [s] }, null).crew[0]); n.added++;
+        var q = Importer.fromFiles({ people: [s] }, null).crew[0];
+        day.crew.push(q); n.added.push(q.name);
       } else if (p && (p.tin || p.tout)) {
-        p.tin = ""; p.tout = ""; n.cleared++;
+        clearHours(p); n.cleared++;
       }
     });
+    if (n.added.length) rememberOrder();
     return n;
   }
 
@@ -1983,47 +2149,89 @@ var Store = (function () {
       } catch (e) { bad.push(f.name); }
     }
     if (!scan && !found.signin && !found.lem) { fillNotice("err", (bad.join(", ") || "That file") + " isn't a sign-in sheet or a LEM this page can read."); return; }
-    undoDay = JSON.parse(JSON.stringify(day));
-    ticked = {};
-    $("undo-btn").hidden = false;
-    var msg;
     if (scan && !found.lem && day.crew.length) {
+      undoDay = JSON.parse(JSON.stringify(day));
       var n = mergeScan(scan);
-      msg = "Took the times for " + n.updated + (n.updated === 1 ? " person" : " people") + " from the scan" +
-        (n.added ? ", added " + n.added + (n.added === 1 ? " person who wasn't" : " people who weren't") + " on the crew" : "") +
-        (n.cleared ? ", and cleared the times of " + n.cleared + (n.cleared === 1 ? " person who isn't" : " people who aren't") + " on it" : "") + ". Check them against the scan.";
+      ticked = {};
+      $("undo-btn").hidden = false;
+      fillNotice("ok", "Took the times for " + n.updated + (n.updated === 1 ? " person" : " people") + " from the scan" +
+        (n.added.length ? ", added " + n.added.length + (n.added.length === 1 ? " person who wasn't" : " people who weren't") + " on the crew" : "") +
+        (n.cleared ? ", and cleared the times of " + n.cleared + (n.cleared === 1 ? " person who isn't" : " people who aren't") + " on it" : "") +
+        ". Check them against the scan." + (scan.date && scan.date !== day.date ? " The scan is dated " + niceDate(scan.date) + "." : ""));
+      addList("Added from the scan:", n.added);
+      addList("Missing signatures on the scan:", scan.scan.unsigned);
+      addList("Hard to read, check these:", scan.scan.unclear);
+      addList("Spelled differently on the scan (your spelling kept):", n.spelled);
+      renderAll(); scheduleSave();
+      return;
+    }
+    // A scan stands in for the sign-in file, but isn't a layout to fill in
+    if (scan) found.signin = { data: scan, name: scan.file, bytes: null };
+    var imp = Importer.fromFiles(found.signin && found.signin.data, found.lem && found.lem.data, { breakHrs: settings.breakHrs, startTime: $("bulk-in").value });
+    undoDay = JSON.parse(JSON.stringify(day));
+    // A crew is already filled in: keep everyone as they are and add only the workers who aren't on it yet
+    var merging = day.crew.length > 0, added = [], addedEq = 0;
+    if (merging) {
+      var have = {};
+      day.crew.forEach(function (p) { have[personKey(p.name)] = 1; if (p.empId) have["#" + String(p.empId).trim().toLowerCase()] = 1; });
+      imp.crew.forEach(function (p) {
+        var k = personKey(p.name), id = p.empId ? "#" + String(p.empId).trim().toLowerCase() : null;
+        if (!k || have[k] || (id && have[id])) return;
+        have[k] = 1; if (id) have[id] = 1;
+        p.lemOrder = null; added.push(p.name);
+        var pos = String(p.position || "").trim().toLowerCase(), at = -1;
+        day.crew.forEach(function (q, i) { if (pos && String(q.position || "").trim().toLowerCase() === pos) at = i; });
+        if (at >= 0) day.crew.splice(at + 1, 0, p); else day.crew.push(p);
+      });
+      if (found.lem) {
+        var haveEq = {};
+        day.equipment.forEach(function (q) { haveEq[equipKey(q)] = 1; });
+        imp.equipment.forEach(function (q) { var k = equipKey(q); if (k && !haveEq[k]) { haveEq[k] = 1; day.equipment.push(q); addedEq++; } });
+      }
     } else {
-      var imp = Importer.fromFiles(scan || (found.signin && found.signin.data), found.lem && found.lem.data);
       day.crew = imp.crew;
       if (found.lem) day.equipment = imp.equipment;
-      var from = [scan ? "the scanned sign-in" : found.signin ? "sign-in" : null, found.lem ? "LEM" : null].filter(Boolean);
-      msg = "Filled in " + day.crew.length + " people" + (found.lem ? " and " + day.equipment.length + " pieces of equipment" : "") +
-        " from " + from.join(" and ") + (imp.date ? " (" + niceDate(imp.date) + ")" : "") + ". The date is still " + niceDate(day.date) + ".";
-      if (scan) msg += " Check the times against the scan.";
-      else if (!found.signin || !found.lem) msg += " Drop the " + (found.signin ? "LEM" : "sign-in") + " too so its layout is used.";
     }
-    if (scan && scan.date && scan.date !== day.date) msg += " The scan is dated " + niceDate(scan.date) + ".";
+    if (found.signin && !merging) { settings.roster = rosterFrom(found.signin.data); saveSettings(); }
+    else if (merging && added.length) rememberOrder();
+    ticked = {};
+    $("undo-btn").hidden = false;
+    var kept = [];
     for (var k in found) {
       if (!found[k]) continue;
+      kept.push(k === "signin" ? (scan ? "the scanned sign-in" : "sign-in") : "LEM");
+      if (!found[k].bytes) continue;
       templates[k] = { name: found[k].name, bytes: found[k].bytes };
       try { await saveTemplate(k, found[k].name, found[k].bytes); } catch (e) {}
     }
+    var from = " from " + kept.join(" and ") + (imp.date ? " (" + niceDate(imp.date) + ")" : "");
+    var msg = !merging
+      ? "Filled in " + day.crew.length + " people" + (found.lem ? " and " + day.equipment.length + " pieces of equipment" : "") + from + ". The date is still " + niceDate(day.date) + "."
+      : (added.length ? "Added " + added.length + " new " + (added.length === 1 ? "worker" : "workers") + from + ": " + added.join("; ") + "."
+        : "Everyone in " + kept.join(" and ") + " is already on the crew. Nobody new to add.") +
+        (addedEq ? " Also added " + addedEq + " new piece" + (addedEq === 1 ? "" : "s") + " of equipment." : "") +
+        " Everyone already listed was left as is. Use Undo to take the new workers back off.";
+    var fixedHere = imp.fixes.filter(function (f) { return !merging || added.indexOf(f.name) >= 0; });
+    if (fixedHere.length && !found.signin) msg += " With no sign-in, times start at " + ($("bulk-in").value || "06:00") + " and run for each person's LEM hours.";
+    else if (fixedHere.length) msg += " Hours taken from the LEM, time out moved to match: " + fixedHere.map(function (f) {
+      return f.name + " (" + (f.signin == null ? "no sign-in times" : "sign-in " + fmt(f.signin)) + " → LEM " + fmt(f.lem) + ")";
+    }).join("; ") + ".";
+    if (scan) msg += " Check the times against the scan." + (scan.date && scan.date !== day.date ? " The scan is dated " + niceDate(scan.date) + "." : "");
+    else if (!found.signin || !found.lem) msg += " Drop the " + (found.signin ? "LEM" : "sign-in") + " too so its layout is used.";
     fillNotice("ok", msg);
-    if (scan) {
-      addList("Missing signatures on the scan:", scan.scan.unsigned);
-      addList("Hard to read, check these:", scan.scan.unclear);
-      if (n) addList("Spelled differently on the scan (your spelling kept):", n.spelled);
-    }
+    if (scan) { addList("Missing signatures on the scan:", scan.scan.unsigned); addList("Hard to read, check these:", scan.scan.unclear); }
     renderAll(); renderLayout(); scheduleSave();
   }
 
   // ----- crew table -----
   function hoursOf(p) { return Builder.hoursOf(p, 0); }
   function lemHours(p) { return Builder.hoursOf(p, settings.breakHrs); }
+  var TRADES_MAX = 12;
+  function overMax(p) { return p.tab === "trades" && lemHours(p) > TRADES_MAX; }
   function opt(v, label, cur) { return '<option value="' + v + '"' + (v === cur ? " selected" : "") + ">" + label + "</option>"; }
   function crewRow(p, i) {
     var h = hoursOf(p), partial = (!!p.tin) !== (!!p.tout);
-    return '<tr data-id="' + p.id + '" class="' + (partial ? "bad" : h ? "" : "off") + '">' +
+    return '<tr data-id="' + p.id + '" class="' + (partial || overMax(p) ? "bad" : h ? "" : "off") + '">' +
       '<td class="tick"><input type="checkbox" data-tick ' + (ticked[p.id] ? "checked" : "") + ' aria-label="Tick ' + esc(p.name) + '"></td>' +
       '<td class="sticky"><input class="w-name" data-f="name" value="' + esc(p.name) + '" placeholder="Last, First" aria-label="Name"></td>' +
       '<td><input class="w-id" data-f="empId" value="' + esc(p.empId) + '" aria-label="ID number"></td>' +
@@ -2033,7 +2241,7 @@ var Store = (function () {
       '<td><select data-f="shift" aria-label="Shift">' + opt("Day", "Day", p.shift) + opt("Night", "Night", p.shift) + "</select></td>" +
       '<td><input type="time" data-f="tin" value="' + esc(p.tin) + '" aria-label="Time in"></td>' +
       '<td><input type="time" data-f="tout" value="' + esc(p.tout) + '" aria-label="Time out"></td>' +
-      '<td class="calc" data-c="hrs"></td><td class="calc" data-c="split"></td>' +
+      '<td class="calc"><div class="hrs-tools"><button type="button" class="icon" data-act="minus" aria-label="One hour less for ' + esc(p.name) + '" title="One hour less">−</button><span class="hv" data-c="hrs"></span><button type="button" class="icon" data-act="plus" aria-label="One hour more for ' + esc(p.name) + '" title="One hour more">+</button><button type="button" class="icon" data-act="zero" aria-label="Set ' + esc(p.name) + ' to zero hours" title="Zero hours">0</button></div></td><td class="calc" data-c="split"></td>' +
       '<td><input class="w-act" data-f="activity" value="' + esc(p.activity) + '" aria-label="Activity ID"></td>' +
       '<td><input class="w-cwp" data-f="cwp" value="' + esc(p.cwp) + '" aria-label="CWP description"></td>' +
       '<td><input class="w-cost" data-f="cost" value="' + esc(p.cost) + '" aria-label="Cost code"></td>' +
@@ -2041,11 +2249,11 @@ var Store = (function () {
   }
   function updateCalc(tr, p) {
     var h = hoursOf(p), lh = lemHours(p), partial = (!!p.tin) !== (!!p.tout);
-    tr.className = partial ? "bad" : h ? "" : "off";
+    tr.className = partial || overMax(p) ? "bad" : h ? "" : "off";
     var hc = tr.querySelector('[data-c="hrs"]'), sc = tr.querySelector('[data-c="split"]');
-    hc.textContent = partial ? (p.tin ? "no out" : "no in") : h ? fmt(lh) : "off";
-    hc.className = "calc" + (h ? "" : " off");
-    if (p.tab === "trades" && lh) { var s = Builder.split(lh, settings); sc.textContent = fmt(s.st) + " · " + fmt(s.ot) + " · " + fmt(s.dt); }
+    hc.textContent = partial ? (p.tin ? "no out" : "no in") : h ? fmt(lh) + (overMax(p) ? " > " + TRADES_MAX : "") : "off";
+    hc.className = "hv" + (h ? "" : " off");
+    if (p.tab === "trades" && lh) { var s = Builder.split(lh, settings, Builder.dayKind(day)); sc.textContent = fmt(s.st) + " · " + fmt(s.ot) + " · " + fmt(s.dt); }
     else sc.textContent = "";
   }
   function renderCrew() {
@@ -2064,6 +2272,15 @@ var Store = (function () {
     if (!p || !f) return;
     if (f === "position" && (!p.lemClass || p.lemClass === p.position)) { p.lemClass = t.value; tr.querySelector('[data-f="lemClass"]').value = t.value; }
     p[f] = t.value;
+    if (f === "tab") {
+      var other = codeFor(p.tab === "trades" ? "staff" : "trades");
+      if (p.activity === other) p.activity = "";
+      if (p.cost === other || p.tab !== "trades" && p.cost === codeFor("trades")) p.cost = "";
+    }
+    if (f === "tin" || f === "tout" || f === "tab") {
+      defaultCode(p);
+      tr.querySelector('[data-f="cost"]').value = p.cost; tr.querySelector('[data-f="activity"]').value = p.activity;
+    }
     updateCalc(tr, p); renderSummary(); scheduleSave();
   });
   $("crew-rows").addEventListener("change", function (e) {
@@ -2071,26 +2288,94 @@ var Store = (function () {
     if (!p) return;
     if (t.hasAttribute("data-tick")) { if (t.checked) ticked[p.id] = 1; else delete ticked[p.id]; renderTicks(); return; }
     var f = t.getAttribute("data-f");
-    if (f === "name") { t.value = Importer.tidyName(t.value); p.name = t.value; scheduleSave(); }
+    if (f === "name") { t.value = Importer.tidyName(t.value); p.name = t.value; rememberOrder(); scheduleSave(); }
   });
   $("crew-rows").addEventListener("click", function (e) {
     var b = e.target.closest("button[data-act]"); if (!b) return;
     var tr = b.closest("tr"), p = findP(tr), i = day.crew.indexOf(p), act = b.getAttribute("data-act");
     if (act === "del") { day.crew.splice(i, 1); delete ticked[p.id]; }
+    if (act === "plus" || act === "minus") nudgeHours(p, act === "plus" ? 1 : -1);
+    if (act === "zero") clearHours(p);
     if (act === "up" && i > 0) { day.crew.splice(i, 1); day.crew.splice(i - 1, 0, p); }
     if (act === "down" && i < day.crew.length - 1) { day.crew.splice(i, 1); day.crew.splice(i + 1, 0, p); }
+    if (act === "up" || act === "down") rememberOrder();
     renderCrew(); scheduleSave();
     var again = document.querySelector('#crew-rows tr[data-id="' + (p && p.id) + '"] button[data-act="' + act + '"]');
     if (again && act !== "del") again.focus();
   });
+  // +/- one hour: moves time out, keeping time in. Starts from the bulk "In" time when the row is blank.
+  function addMin(t, m) { var x = ((Builder.toMin(t) + m) % 1440 + 1440) % 1440; return String(Math.floor(x / 60)).padStart(2, "0") + ":" + String(x % 60).padStart(2, "0"); }
+  // Anyone with hours gets their tab's default code (Activity ID, and the LEM cost code for trades);
+  // anyone without hours has no code
+  function codeFor(tab) { return (settings.codes || {})[tab === "trades" ? "trades" : "staff"] || ""; }
+  function defaultCode(p) {
+    if (!hoursOf(p)) return;
+    var c = codeFor(p.tab);
+    if (!p.activity) p.activity = c;
+    if (p.tab === "trades" && !p.cost) p.cost = c;
+  }
+  function clearHours(p) { p.tin = ""; p.tout = ""; p.cost = ""; p.activity = ""; }
+  function tidyCodes() {
+    day.crew.forEach(function (p) {
+      if (hoursOf(p)) defaultCode(p);
+      else if (!p.tin && !p.tout) { p.cost = ""; p.activity = ""; }
+    });
+  }
+  function renderCodes() { $("c-trades").value = codeFor("trades"); $("c-staff").value = codeFor("staff"); }
+  [["c-trades", "trades"], ["c-staff", "staff"]].forEach(function (pair) {
+    $(pair[0]).addEventListener("change", function () {
+      var old = codeFor(pair[1]), now = this.value.trim();
+      settings.codes = Object.assign({}, settings.codes); settings.codes[pair[1]] = now;
+      // People still on the old default move to the new one
+      day.crew.forEach(function (p) {
+        if ((p.tab === "trades" ? "trades" : "staff") !== pair[1]) return;
+        var same = function (v) { return String(v || "").trim().toLowerCase() === old.trim().toLowerCase(); };
+        if (old && same(p.activity)) p.activity = now;
+        if (old && same(p.cost)) p.cost = now;
+      });
+      tidyCodes(); renderCrew(); scheduleSave(); saveSettings();
+    });
+  });
+
+  // ----- keep the crew in the order you set (from your sign-in, or moved with the arrows) -----
+  function applyRoster() {
+    var order = {}; (settings.roster || []).forEach(function (k, i) { if (!(k in order)) order[k] = i; });
+    if (!Object.keys(order).length) return;
+    var prev = -1, step = 0;
+    var ranked = day.crew.map(function (p, i) {
+      var k = personKey(p.name), r;
+      if (k in order) { r = order[k]; prev = r; step = 0; } else r = prev + (++step) * 1e-3;   // not on the list: stay after the person above
+      return { p: p, r: r, i: i };
+    });
+    ranked.sort(function (a, b) { return a.r - b.r || a.i - b.i; });
+    day.crew = ranked.map(function (x) { return x.p; });
+  }
+  function rememberOrder() {
+    var keys = day.crew.map(function (p) { return personKey(p.name); }).filter(Boolean), seen = {};
+    keys.forEach(function (k) { seen[k] = 1; });
+    settings.roster = keys.concat((settings.roster || []).filter(function (k) { return !seen[k]; }));
+    saveSettings();
+  }
+  function rosterFrom(signinData) {
+    return signinData ? signinData.people.map(function (s) { return personKey(s.raw); }).filter(Boolean) : [];
+  }
+  function nudgeHours(p, step) {
+    if (!p.tin && !p.tout) { if (step < 0) return; p.tin = $("bulk-in").value || "06:00"; p.tout = p.tin; }
+    else if (!p.tin) p.tin = p.tout;
+    else if (!p.tout) p.tout = p.tin;
+    var h = Math.min(hoursOf(p) + step, 23);
+    if (h <= 0) { clearHours(p); return; }
+    p.tout = addMin(p.tin, Math.round(h * 60));
+    defaultCode(p);
+  }
   $("add-person").addEventListener("click", function () {
     var last = day.crew[day.crew.length - 1] || {};
-    var p = { id: uid(), name: "", empId: "", position: "", tab: last.tab || "trades", lemClass: "", shift: "Day", tin: "", tout: "", activity: last.activity || "", cwp: last.cwp || "", cost: last.cost || "", sub: "", lemOrder: null };
+    var p = { id: uid(), name: "", empId: "", position: "", tab: last.tab || "trades", lemClass: "", shift: "Day", tin: "", tout: "", activity: "", cwp: last.cwp || "", cost: "", sub: "", lemOrder: null };
     day.crew.push(p); renderCrew(); scheduleSave();
     var inp = document.querySelector('#crew-rows tr[data-id="' + p.id + '"] [data-f="name"]'); if (inp) inp.focus();
   });
   $("clear-times").addEventListener("click", function () {
-    day.crew.forEach(function (p) { p.tin = ""; p.tout = ""; }); renderCrew(); scheduleSave();
+    day.crew.forEach(clearHours); renderCrew(); scheduleSave();
   });
 
   // ----- bulk actions on ticked rows -----
@@ -2106,10 +2391,10 @@ var Store = (function () {
   });
   $("bulk-apply").addEventListener("click", function () {
     var a = $("bulk-in").value, b = $("bulk-out").value;
-    tickedList().forEach(function (p) { p.tin = a; p.tout = b; }); renderCrew(); scheduleSave();
+    tickedList().forEach(function (p) { if (a && b) { p.tin = a; p.tout = b; defaultCode(p); } else clearHours(p); }); renderCrew(); scheduleSave();
   });
   $("bulk-clear").addEventListener("click", function () {
-    tickedList().forEach(function (p) { p.tin = ""; p.tout = ""; }); renderCrew(); scheduleSave();
+    tickedList().forEach(clearHours); renderCrew(); scheduleSave();
   });
   $("bulk-remove").addEventListener("click", function () {
     day.crew = day.crew.filter(function (p) { return !ticked[p.id]; }); ticked = {}; renderCrew(); scheduleSave();
@@ -2153,16 +2438,18 @@ var Store = (function () {
 
   // ----- summary -----
   function renderSummary() {
-    var working = 0, staffH = 0, tradesH = 0, partial = 0;
+    var working = 0, staffH = 0, tradesH = 0, partial = 0, over = 0;
     day.crew.forEach(function (p) {
       var h = lemHours(p);
       if ((!!p.tin) !== (!!p.tout)) partial++;
+      if (overMax(p)) over++;
       if (h) { working++; if (p.tab === "trades") tradesH += h; else staffH += h; }
     });
     $("crew-count").textContent = day.crew.length ? day.crew.length + " listed · " + working + " working" : "";
     $("gen-sum").innerHTML = esc(niceDate(day.date)) + " · " + working + " working · " + fmt(staffH + tradesH) + " hrs " +
       "<span>(staff " + fmt(staffH) + " · trades " + fmt(tradesH) + ")</span>" +
-      (partial ? ' <span style="color:var(--bad)">· ' + partial + " missing a time in or out</span>" : "");
+      (partial ? ' <span style="color:var(--bad)">· ' + partial + " missing a time in or out</span>" : "") +
+      (over ? ' <span style="color:var(--bad)">· ' + over + " trades over " + TRADES_MAX + " hrs</span>" : "");
   }
 
   // ----- day fields & rules -----
@@ -2174,15 +2461,18 @@ var Store = (function () {
       day.crew = day.crew || []; day.equipment = day.equipment || [];
       fillNotice("ok", "Opened the saved " + niceDate(v) + ".");
     } else {
-      day.date = v;
+      day.date = v; day.stat = false;
       scheduleSave();
     }
     undoDay = null; $("undo-btn").hidden = true; ticked = {};
     $("f-shift").value = day.shift || "D";
     renderAll();
   });
+  function pickDate(v) { var el = $("f-date"); if (el.value === v) return; el.value = v; el.dispatchEvent(new Event("change")); }
+  $("date-yday").addEventListener("click", function () { pickDate(daysAgo(1)); });
+  $("date-today").addEventListener("click", function () { pickDate(daysAgo(0)); });
   $("f-shift").addEventListener("change", function () { day.shift = this.value; scheduleSave(); });
-  [["r-st", "stMax"], ["r-ot", "otMax"], ["r-break", "breakHrs"]].forEach(function (pair) {
+  [["r-st", "stMax"], ["r-ot", "otMax"], ["r-sat", "satOt"], ["r-break", "breakHrs"]].forEach(function (pair) {
     $(pair[0]).addEventListener("input", function () {
       var v = parseFloat(this.value); settings[pair[1]] = isNaN(v) ? 0 : v;
       Array.prototype.forEach.call($("crew-rows").rows, function (tr) { var p = findP(tr); if (p) updateCalc(tr, p); });
@@ -2210,6 +2500,7 @@ var Store = (function () {
     day.crew.forEach(function (p) {
       if (!p.name.trim()) out.push("a row has no name");
       else if ((!!p.tin) !== (!!p.tout)) out.push(p.name + " has a time " + (p.tin ? "in but no time out" : "out but no time in"));
+      else if (overMax(p)) out.push(p.name + " is down for " + fmt(lemHours(p)) + " hrs; trades can't go over " + TRADES_MAX);
     });
     return out;
   }
@@ -2236,19 +2527,28 @@ var Store = (function () {
   $("dl-lem").addEventListener("click", function () { generate(["lem"]); });
   $("dl-both").addEventListener("click", function () { generate(["signin", "lem"]); });
 
+  var RATE = { week: "Weekday rates", sat: "Saturday · OT then DT", sun: "Sunday · all double time", stat: "Stat holiday · all double time" };
+  function renderLemFor() {
+    var p = day.date.split("-"), d = new Date(+p[0], +p[1] - 1, +p[2]), k = Builder.dayKind(day);
+    $("lem-for").innerHTML = "Making LEMs for " + esc(d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })) +
+      '<span class="rate' + (k === "week" ? "" : " hot") + '">' + RATE[k] + "</span>";
+    $("f-stat").checked = !!day.stat;
+  }
+  $("f-stat").addEventListener("change", function () { day.stat = this.checked; renderLemFor(); renderCrew(); scheduleSave(); });
   function renderAll() {
-    $("f-date").value = day.date; $("f-shift").value = day.shift || "D";
+    $("f-date").value = day.date; $("f-shift").value = day.shift || "D"; renderLemFor();
+    applyRoster(); tidyCodes();
     renderCrew(); renderEquip(); renderCopyFrom(); renderSummary();
   }
 
   // ----- start -----
   $("f-date").value = day.date;
-  renderAll(); renderLayout();
+  renderCodes(); renderAll(); renderLayout();
   saveState("Loading saved days…");
   (async function () {
     try {
       var s = await Store.get("settings/main");
-      if (s) { settings = Object.assign(settings, s); $("r-st").value = settings.stMax; $("r-ot").value = settings.otMax; $("r-break").value = settings.breakHrs; }
+      if (s) { settings = Object.assign(settings, s, { codes: Object.assign({}, settings.codes, s.codes) }); renderCodes(); $("r-st").value = settings.stMax; $("r-ot").value = settings.otMax; $("r-sat").value = settings.satOt; $("r-break").value = settings.breakHrs; }
       savedDays = await Store.days();
       var mine = savedDays.find(function (d) { return d.date === day.date; });
       if (mine && !day.crew.length) { day = JSON.parse(JSON.stringify(mine)); day.crew = day.crew || []; day.equipment = day.equipment || []; }
@@ -2256,6 +2556,12 @@ var Store = (function () {
       saveState(mine ? "Saved" : Store.mode() === "db" ? "Not saved yet" : "Saves in this browser only");
       var t1 = await loadTemplate("signin"), t2 = await loadTemplate("lem");
       if (t1 && !templates.signin) templates.signin = t1;
+      if (!(settings.roster || []).length && templates.signin) {
+        try {
+          var r0 = Logic.readWorkbook(XLSX.read(templates.signin.bytes, { type: "array" }));
+          if (r0.kind === "signin") { settings.roster = rosterFrom(r0.data); saveSettings(); renderAll(); }
+        } catch (e) {}
+      }
       if (t2 && !templates.lem) templates.lem = t2;
       renderLayout();
     } catch (e) {
